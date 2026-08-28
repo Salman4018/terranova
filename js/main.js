@@ -492,14 +492,18 @@ highlightToday();
     }
   }
 
-  if (choice === 'all') {
+  // Load map by default; only keep placeholder if user explicitly opted out
+  if (choice === 'essential') {
+    showPlaceholder();
+  } else {
     injectMap();
-    return;
+    if (!choice) localStorage.setItem(KEY, 'all');
   }
 
-  // Show placeholder and banner on first visit
-  showPlaceholder();
-  banner.hidden = false;
+  // Banner is still shown on first visit so users can choose essential-only
+  if (!choice) {
+    banner.hidden = false;
+  }
 
   consentAll?.addEventListener('click', () => {
     injectMap();
@@ -509,6 +513,7 @@ highlightToday();
 
   consentEssential?.addEventListener('click', () => {
     localStorage.setItem(KEY, 'essential');
+    showPlaceholder();
     banner.hidden = true;
   });
 })();
