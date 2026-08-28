@@ -262,7 +262,26 @@ a:focus-visible {
   color: var(--cream);
   line-height: 1;
 }
-.nav__logo-t { color: var(--terra); font-weight: 600; }
+.nav__logo-letter {
+  display: inline-block;
+  animation: letterBlink 2.7s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.18s);
+}
+.nav__logo-letter:first-child {
+  color: var(--terra);
+  font-weight: 600;
+}
+
+@keyframes letterBlink {
+  0%, 100%            { opacity: 1; }
+  45%                 { opacity: 1; }
+  52%                 { opacity: 0.25; }
+  60%                 { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav__logo-letter { animation: none; }
+}
 
 .nav__links {
   display: flex;
@@ -847,6 +866,15 @@ a:focus-visible {
   font-weight: 400;
   display: block;
   margin-bottom: 6px;
+}
+.footer__logo-letter {
+  display: inline-block;
+  animation: letterBlink 2.7s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.18s);
+}
+.footer__logo-letter:first-child {
+  color: var(--terra);
+  font-weight: 600;
 }
 .footer__brand p {
   font-size: 0.8rem;
