@@ -36,6 +36,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: var(--nav-h);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -52,10 +53,36 @@ img { display: block; width: 100%; height: 100%; object-fit: cover; }
 a   { color: inherit; text-decoration: none; }
 ul  { list-style: none; }
 
+*:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 3px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline-color: var(--gold);
+}
+
 /* scrollbar */
 ::-webkit-scrollbar            { width: 6px; }
 ::-webkit-scrollbar-track      { background: var(--bg); }
 ::-webkit-scrollbar-thumb      { background: var(--terra); border-radius: 99px; }
+
+/* ── Skip link ───────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: var(--terra);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: top 0.2s;
+}
+.skip-link:focus { top: 0; outline-offset: 0; }
 
 /* ── Container ───────────────────────────────────────────────── */
 .container {
@@ -76,10 +103,36 @@ ul  { list-style: none; }
 .reveal--delay-2.visible  { transition-delay: 0.24s; }
 .reveal--delay-3.visible  { transition-delay: 0.36s; }
 
+/* Visible by default when JS fails or user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal--delay-1, .reveal--delay-2, .reveal--delay-3 {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .hero__scroll-line,
+  .marquee__track,
+  .hours__status::before,
+  .reviews__bar-fill,
+  .review-card {
+    animation: none !important;
+  }
+}
+
+.no-js .reveal,
+.no-js .reveal--delay-1,
+.no-js .reveal--delay-2,
+.no-js .reveal--delay-3 {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
 /* ── Buttons ─────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 14px 32px;
   border-radius: 99px;
@@ -90,25 +143,34 @@ ul  { list-style: none; }
   cursor: pointer;
   transition: transform 0.25s var(--ease-out-expo),
               box-shadow 0.25s var(--ease-out-expo),
-              background 0.25s;
+              background 0.25s, border-color 0.25s;
   white-space: nowrap;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: inherit;
 }
 .btn:hover { transform: translateY(-2px); }
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
 
 .btn--primary {
   background: var(--terra);
+  border-color: var(--terra);
   color: #fff;
   box-shadow: 0 4px 24px rgba(196, 98, 45, 0.35);
 }
 .btn--primary:hover {
   background: var(--terra-light);
+  border-color: var(--terra-light);
   box-shadow: 0 8px 32px rgba(196, 98, 45, 0.5);
 }
 
 .btn--ghost {
-  background: transparent;
   color: var(--cream);
-  border: 1.5px solid rgba(245, 239, 232, 0.35);
+  border-color: rgba(245, 239, 232, 0.35);
 }
 .btn--ghost:hover {
   border-color: var(--cream);
@@ -117,12 +179,19 @@ ul  { list-style: none; }
 
 .btn--white {
   background: var(--cream);
+  border-color: var(--cream);
   color: var(--bg);
   font-weight: 600;
 }
 .btn--white:hover {
   background: #fff;
+  border-color: #fff;
   box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+/* Review bar chart: fallback bars are static width; JS will rebuild with live data */
+.reviews__bar-fill {
+  animation: barGrow 1s var(--ease-out-expo) forwards;
 }
 
 /* ── Section shared ──────────────────────────────────────────── */
@@ -231,6 +300,7 @@ ul  { list-style: none; }
 .lang-toggle:hover { border-color: var(--terra); color: var(--cream); }
 .lang-toggle__en.active,
 .lang-toggle__de.active { color: var(--terra); font-weight: 600; }
+.lang-toggle:active { transform: scale(0.96); }
 .lang-toggle__sep { opacity: 0.4; }
 
 /* burger */
@@ -242,12 +312,13 @@ ul  { list-style: none; }
   border: none;
   cursor: pointer;
   padding: 4px;
+  color: var(--cream);
 }
 .nav__burger span {
   display: block;
   width: 24px;
   height: 1.5px;
-  background: var(--cream);
+  background: currentColor;
   border-radius: 99px;
   transition: transform 0.3s, opacity 0.3s;
 }
@@ -685,6 +756,26 @@ ul  { list-style: none; }
 }
 .location__map:hover iframe { filter: grayscale(0) invert(0); opacity: 1; }
 
+/* placeholder shown when maps consent not yet given */
+.location__map--placeholder {
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 40px;
+  min-height: 480px;
+}
+.location__map--placeholder p {
+  color: var(--cream-muted);
+  max-width: 320px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    INSTAGRAM BANNER
    ═══════════════════════════════════════════════════════════════ */
@@ -804,6 +895,36 @@ ul  { list-style: none; }
 .footer__bottom p {
   font-size: 0.78rem;
   color: var(--cream-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRIVACY BANNER
+   ═══════════════════════════════════════════════════════════════ */
+.privacy-banner {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 300;
+  background: rgba(10, 6, 4, 0.98);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding-block: 18px;
+  transform: translateY(0);
+  transition: transform 0.4s var(--ease-out-expo);
+}
+.privacy-banner[hidden] { display: none; transform: translateY(100%); }
+.privacy-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.privacy-banner__inner p { color: var(--cream); font-size: 0.9rem; }
+.privacy-banner__actions { display: flex; gap: 12px; }
+.privacy-banner .btn { padding: 10px 22px; font-size: 0.82rem; }
+@media (max-width: 640px) {
+  .privacy-banner__inner { flex-direction: column; text-align: center; }
+  .privacy-banner__actions { width: 100%; justify-content: center; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1012,7 +1133,6 @@ ul  { list-style: none; }
   background: linear-gradient(to right, var(--terra), var(--gold));
   border-radius: 99px;
   transform-origin: left;
-  animation: barGrow 1s var(--ease-out-expo) forwards;
   transform: scaleX(0);
 }
 @keyframes barGrow {

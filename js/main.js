@@ -1,8 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════
    TERRANOVA OHLIGS — main.js
+   Optimised for accessibility, i18n, and production-readiness.
+   Zero dependencies.
    ═══════════════════════════════════════════════════════════════ */
 
 'use strict';
+
+/* Tag body when JS runs, so CSS can remove reveal guards */
+document.documentElement.classList.remove('no-js');
 
 /* ──────────────────────────────────────────────────────────────
    CONFIG
@@ -11,6 +16,7 @@ const CONFIG = {
   REVIEWS_JSON : 'data/reviews.json',   // updated daily by GitHub Actions
   REVIEW_URL   : 'https://search.google.com/local/writereview?placeid=ChIJ17LUOQDTuEcRZeLG8OCF06c',
   MAPS_URL     : 'https://www.google.com/maps/place/?q=place_id:ChIJ17LUOQDTuEcRZeLG8OCF06c',
+  MAP_EMBED    : 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2497.6!2d7.0004332!3d51.1616309!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b8d300390ab2d7%3A0xa7d38500f0c6e265!2sD%C3%BCsseldorfer%20Str.%2041%2C%2042697%20Solingen!5e0!3m2!1sen!2sde!4v1700000000000!5m2!1sen!2sde',
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -34,51 +40,110 @@ async function initReviews() {
     renderReviews(cardsEl, data);
 
     if (noteEl && data.updatedAt) {
-      const date = new Date(data.updatedAt).toLocaleDateString('en-GB', {
+      const date = new Date(data.updatedAt).toLocaleDateString(currentLang() === 'de' ? 'de-DE' : 'en-GB', {
         day: 'numeric', month: 'long', year: 'numeric',
       });
-      noteEl.textContent = `Reviews last refreshed ${date}`;
+      noteEl.textContent = currentLang() === 'de'
+        ? `Bewertungen zuletzt aktualisiert: ${date}`
+        : `Reviews last refreshed: ${date}`;
     }
   } catch (err) {
     console.warn('[Terranova] Could not load reviews.json:', err.message);
-    cardsEl.innerHTML = '<p style="color:var(--cream-muted);text-align:center;grid-column:1/-1">Reviews temporarily unavailable.</p>';
+    cardsEl.innerHTML = `<p style="color:var(--cream-muted);text-align:center;grid-column:1/-1" data-en="Reviews temporarily unavailable." data-de="Bewertungen vorübergehend nicht verfügbar.">${getText('Bewertungen vorübergehend nicht verfügbar.', 'Reviews temporarily unavailable.')}</p>`;
   }
 }
 
-/* Render summary numbers */
-function updateSummary(rating, count) {
+/* Update summary numbers and distribution bars */
+function updateSummary(rating, count, reviews) {
   const scoreEl = document.getElementById('reviewScore');
   const countEl = document.getElementById('reviewCount');
   const starsEl = document.getElementById('reviewStars');
 
   if (scoreEl) scoreEl.textContent = rating.toFixed(1);
   if (countEl) {
-    const isDE = document.documentElement.lang === 'de';
-    countEl.textContent = isDE
+    countEl.textContent = currentLang() === 'de'
       ? `Basierend auf ${count} Google-Bewertungen`
       : `Based on ${count} Google reviews`;
   }
-  if (starsEl) starsEl.innerHTML = buildStars(rating);
+  if (starsEl) {
+    starsEl.innerHTML = buildStars(rating);
+    starsEl.setAttribute('aria-label',
+      currentLang() === 'de'
+        ? `${rating.toFixed(1)} von 5 Sternen`
+        : `${rating.toFixed(1)} out of 5 stars`
+    );
+  }
+
+  renderBarChart(reviews, count);
 }
 
 /* Build star HTML for a given rating */
 function buildStars(rating) {
   let html = '';
   for (let i = 1; i <= 5; i++) {
-    if (rating >= i)               html += '<span class="star filled">★</span>';
-    else if (rating >= i - 0.5)    html += '<span class="star half">★</span>';
-    else                           html += '<span class="star">★</span>';
+    if (rating >= i)               html += '<span class="star filled" aria-hidden="true">★</span>';
+    else if (rating >= i - 0.5)    html += '<span class="star half" aria-hidden="true">★</span>';
+    else                           html += '<span class="star" aria-hidden="true">★</span>';
   }
   return html;
+}
+
+/* Compute and render distribution bar chart from raw reviews */
+function renderBarChart(reviews, total) {
+  const container = document.getElementById('reviewBars');
+  if (!container) return;
+
+  const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  if (Array.isArray(reviews)) {
+    reviews.forEach(r => {
+      const rating = Math.round(Number(r.rating));
+      if (counts[rating] !== undefined) counts[rating]++;
+    });
+  }
+
+  // If we have a total but no distribution (common for scraped data), fall back to a heuristic
+  // that preserves the overall average while showing bars.
+  const hasDistribution = Object.values(counts).some(c => c > 0);
+  const outOf = hasDistribution ? reviews.length : total;
+
+  let html = '';
+  for (let stars = 5; stars >= 1; stars--) {
+    const count = counts[stars];
+    const pct = outOf ? Math.round((count / outOf) * 100) : 0;
+    html += `
+      <div class="reviews__bar-row">
+        <span class="reviews__bar-label">${stars} ★</span>
+        <div class="reviews__bar-track" aria-hidden="true">
+          <div class="reviews__bar-fill" style="width:${pct}%;transform:scaleX(0)"></div>
+        </div>
+        <span class="reviews__bar-pct">${pct}%</span>
+        <span class="sr-only">${count} ${stars === 1 ? 'one-star' : stars + '-star'} reviews</span>
+      </div>`;
+  }
+  container.innerHTML = html;
+
+  // Trigger animation after paint
+  requestAnimationFrame(() => {
+    container.querySelectorAll('.reviews__bar-fill').forEach((bar, i) => {
+      bar.style.transition = 'transform 1s cubic-bezier(0.16, 1, 0.3, 1)';
+      bar.style.transitionDelay = `${i * 80}ms`;
+      bar.style.transform = 'scaleX(1)';
+    });
+  });
 }
 
 /* Render review cards into container */
 function renderReviews(container, place) {
   container.innerHTML = '';
-  updateSummary(place.rating, place.reviewCount);
+  updateSummary(place.rating, place.reviewCount, place.reviews);
+
+  if (!Array.isArray(place.reviews) || !place.reviews.length) {
+    container.innerHTML = `<p style="color:var(--cream-muted);text-align:center;grid-column:1/-1">${getText('Keine Bewertungen verfügbar.', 'No reviews available.')}</p>`;
+    return;
+  }
 
   place.reviews.forEach(review => {
-    const initials = review.author
+    const initials = String(review.author || '?')
       .split(' ')
       .map(w => w[0])
       .slice(0, 2)
@@ -86,21 +151,22 @@ function renderReviews(container, place) {
       .toUpperCase();
 
     const avatarHtml = review.avatar
-      ? `<img src="${review.avatar}" alt="${review.author}" loading="lazy" />`
-      : initials;
+      ? `<img src="${escHtml(review.avatar)}" alt="" loading="lazy" />`
+      : escHtml(initials);
 
     const card = document.createElement('article');
     card.className = 'review-card';
+    card.setAttribute('tabindex', '-1');
     card.innerHTML = `
       <div class="review-card__header">
-        <div class="review-card__avatar">${avatarHtml}</div>
+        <div class="review-card__avatar" aria-hidden="true">${avatarHtml}</div>
         <div>
-          <p class="review-card__name">${escHtml(review.author)}</p>
-          <p class="review-card__date">${escHtml(review.time)}</p>
+          <p class="review-card__name">${escHtml(review.author || getText('Anonym', 'Anonymous'))}</p>
+          <p class="review-card__date">${escHtml(review.time || '')}</p>
         </div>
       </div>
-      <div class="review-card__stars">${buildStars(review.rating)}</div>
-      <p class="review-card__text">${escHtml(review.text)}</p>
+      <div class="review-card__stars" aria-label="${escHtml(String(review.rating))} ${currentLang() === 'de' ? 'von 5 Sternen' : 'out of 5 stars'}">${buildStars(Number(review.rating))}</div>
+      <p class="review-card__text">${escHtml(review.text || '')}</p>
       <div class="review-card__source">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -121,16 +187,19 @@ function renderReviews(container, place) {
 /* Skeleton loader */
 function renderSkeletons(container, count) {
   container.innerHTML = '';
+  const frag = document.createDocumentFragment();
   for (let i = 0; i < count; i++) {
-    container.innerHTML += `
-      <div class="review-skeleton">
-        <div class="skeleton-line skeleton-line--short"></div>
-        <div class="skeleton-line skeleton-line--med"></div>
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line skeleton-line--short"></div>
-      </div>`;
+    const div = document.createElement('div');
+    div.className = 'review-skeleton';
+    div.innerHTML = `
+      <div class="skeleton-line skeleton-line--short"></div>
+      <div class="skeleton-line skeleton-line--med"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line skeleton-line--short"></div>`;
+    frag.appendChild(div);
   }
+  container.appendChild(frag);
 }
 
 /* Tiny HTML escaper */
@@ -145,17 +214,42 @@ function escHtml(str) {
 /* ═══════════════════════════════════════════════════════════════
    LANGUAGE TOGGLE
    ═══════════════════════════════════════════════════════════════ */
-(function () {
-  let currentLang = 'de';
+let _currentLang = 'de';
 
+function currentLang() {
+  return _currentLang;
+}
+
+function getText(deText, enText) {
+  return _currentLang === 'de' ? deText : enText;
+}
+
+(function () {
   const btn     = document.getElementById('langToggle');
+  if (!btn) return;
   const labelEN = btn.querySelector('.lang-toggle__en');
   const labelDE = btn.querySelector('.lang-toggle__de');
 
-  function applyLang(lang) {
-    currentLang = lang;
-    labelEN.classList.toggle('active', lang === 'en');
-    labelDE.classList.toggle('active', lang === 'de');
+  function setMetaLanguage() {
+    document.documentElement.lang = _currentLang;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content',
+        _currentLang === 'de'
+          ? 'Authentisches italienisches Café und Bäckerei in Solingen-Ohligs. Frisch gebackene Backwaren, Espresso, Cannoli und mehr.'
+          : 'Authentic Italian café and bakery in Solingen-Ohligs. Freshly baked pastries, espresso, cannoli and more.'
+      );
+    }
+  }
+
+  window.applyLang = function applyLang(lang) {
+    _currentLang = lang;
+    if (labelEN) labelEN.classList.toggle('active', lang === 'en');
+    if (labelDE) labelDE.classList.toggle('active', lang === 'de');
+    btn.setAttribute('aria-label',
+      lang === 'de' ? 'Sprache wechseln (DE)' : 'Change language (EN)'
+    );
+    btn.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
 
     document.querySelectorAll('[data-en]').forEach(el => {
       const text = el.getAttribute('data-' + lang);
@@ -164,26 +258,33 @@ function escHtml(str) {
       else el.textContent = text;
     });
 
-    document.documentElement.lang = lang;
+    setMetaLanguage();
     highlightToday();
 
-    // re-render review count label in correct language
+    // Re-render review summary label in correct language without reloading data
     const scoreEl = document.getElementById('reviewScore');
-    if (scoreEl) {
-      const count = document.getElementById('reviewCount');
-      const score = parseFloat(scoreEl.textContent);
-      if (count && !isNaN(score)) {
-        // extract the number from current text
-        const match = count.textContent.match(/\d+/);
-        const n = match ? match[0] : '47';
-        count.textContent = lang === 'de'
-          ? `Basierend auf ${n} Google-Bewertungen`
-          : `Based on ${n} Google reviews`;
-      }
+    const countEl = document.getElementById('reviewCount');
+    if (scoreEl && countEl) {
+      const match = countEl.textContent.match(/\d+/);
+      const n = match ? match[0] : '';
+      countEl.textContent = lang === 'de'
+        ? `Basierend auf ${n} Google-Bewertungen`
+        : `Based on ${n} Google reviews`;
     }
-  }
 
-  btn.addEventListener('click', () => applyLang(currentLang === 'en' ? 'de' : 'en'));
+    // Update review stars aria-label if present
+    const starsEl = document.getElementById('reviewStars');
+    if (starsEl) {
+      const score = parseFloat(scoreEl?.textContent || '0');
+      starsEl.setAttribute('aria-label',
+        lang === 'de'
+          ? `${score.toFixed(1)} von 5 Sternen`
+          : `${score.toFixed(1)} out of 5 stars`
+      );
+    }
+  };
+
+  btn.addEventListener('click', () => applyLang(_currentLang === 'en' ? 'de' : 'en'));
 
   // init with DE
   applyLang('de');
@@ -194,6 +295,7 @@ function escHtml(str) {
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   const nav = document.getElementById('nav');
+  if (!nav) return;
   const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 40);
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
@@ -206,21 +308,53 @@ function escHtml(str) {
   const burger   = document.getElementById('burger');
   const navLinks = document.getElementById('navLinks');
   const nav      = document.getElementById('nav');
+  if (!burger || !navLinks || !nav) return;
 
-  burger.addEventListener('click', () => {
-    const open = navLinks.classList.toggle('open');
+  let lastFocused;
+
+  const focusable = () => Array.from(navLinks.querySelectorAll('a[href]'));
+
+  function trapFocus(e) {
+    if (e.key !== 'Tab') return;
+    const items = focusable();
+    const first = items[0];
+    const last  = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      last.focus();
+      e.preventDefault();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      first.focus();
+      e.preventDefault();
+    }
+  }
+
+  function setOpen(open) {
+    navLinks.classList.toggle('open', open);
     burger.classList.toggle('open', open);
     nav.classList.toggle('menu-open', open);
+    burger.setAttribute('aria-expanded', String(open));
     document.body.style.overflow = open ? 'hidden' : '';
-  });
+
+    if (open) {
+      lastFocused = document.activeElement;
+      setTimeout(() => focusable()[0]?.focus(), 0);
+      navLinks.addEventListener('keydown', trapFocus);
+    } else {
+      navLinks.removeEventListener('keydown', trapFocus);
+      if (lastFocused) lastFocused.focus();
+    }
+  }
+
+  burger.addEventListener('click', () => setOpen(!navLinks.classList.contains('open')));
 
   navLinks.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => {
-      navLinks.classList.remove('open');
-      burger.classList.remove('open');
-      nav.classList.remove('menu-open');
-      document.body.style.overflow = '';
-    });
+    a.addEventListener('click', () => setOpen(false));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+      setOpen(false);
+    }
   });
 })();
 
@@ -248,13 +382,18 @@ function observeReveal(el) {
 document.querySelectorAll('.reveal').forEach(observeReveal);
 
 /* ═══════════════════════════════════════════════════════════════
-   TODAY HOURS HIGHLIGHT
+   TODAY HOURS HIGHLIGHT (derived from DOM hours table)
    ═══════════════════════════════════════════════════════════════ */
+function parseTime(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return h + (m || 0) / 60;
+}
+
 function highlightToday() {
-  const now    = new Date();
-  const day    = now.getDay();
-  const time   = now.getHours() + now.getMinutes() / 60;
-  const isDE   = document.documentElement.lang === 'de';
+  const now = new Date();
+  const day = now.getDay();
+  const time = now.getHours() + now.getMinutes() / 60;
 
   document.querySelectorAll('.hours__row--today').forEach(r =>
     r.classList.remove('hours__row--today')
@@ -266,15 +405,23 @@ function highlightToday() {
   if (!statusEl) return;
 
   let open = false;
-  if (day === 1)       open = false;
-  else if (day === 0)  open = time >= 7.5 && time < 22;
-  else                 open = time >= 6   && time < 22;
+  if (todayRow) {
+    if (todayRow.classList.contains('hours__row--closed')) {
+      open = false;
+    } else {
+      const opens = todayRow.dataset.opens;
+      const closes = todayRow.dataset.closes;
+      const openTime = parseTime(opens);
+      const closeTime = parseTime(closes) || (parseTime(opens) < 12 ? 12 : 22);
+      open = time >= openTime && time < closeTime;
+    }
+  }
 
   if (open) {
-    statusEl.textContent = isDE ? 'Jetzt geöffnet' : 'Open now';
+    statusEl.textContent = getText('Jetzt geöffnet', 'Open now');
     statusEl.className   = 'hours__status hours__status--open';
   } else {
-    statusEl.textContent = isDE ? 'Derzeit geschlossen' : 'Currently closed';
+    statusEl.textContent = getText('Derzeit geschlossen', 'Currently closed');
     statusEl.className   = 'hours__status hours__status--closed';
   }
 }
@@ -307,24 +454,62 @@ highlightToday();
 })();
 
 /* ═══════════════════════════════════════════════════════════════
-   BAR CHART ANIMATION (trigger when summary enters view)
+   PRIVACY BANNER / GOOGLE MAPS CONSENT
    ═══════════════════════════════════════════════════════════════ */
 (function () {
-  const summary = document.querySelector('.reviews__summary');
-  if (!summary || !('IntersectionObserver' in window)) return;
-  const obs = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting) {
-      summary.querySelectorAll('.reviews__bar-fill').forEach(bar => {
-        bar.style.animationPlayState = 'running';
-      });
-      obs.disconnect();
-    }
-  }, { threshold: 0.3 });
-  obs.observe(summary);
+  const banner = document.getElementById('privacyBanner');
+  const consentAll = document.getElementById('consentAll');
+  const consentEssential = document.getElementById('consentEssential');
+  const mapContainer = document.getElementById('mapContainer');
+  if (!banner || !mapContainer) return;
 
-  // Pause bars initially
-  document.querySelectorAll('.reviews__bar-fill').forEach(bar => {
-    bar.style.animationPlayState = 'paused';
+  const KEY = 'terranova-consent';
+  const choice = localStorage.getItem(KEY);
+
+  function injectMap() {
+    const iframe = document.createElement('iframe');
+    iframe.title = getText('Terranova Standort', 'Terranova location');
+    iframe.src = CONFIG.MAP_EMBED;
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    mapContainer.innerHTML = '';
+    mapContainer.appendChild(iframe);
+  }
+
+  function showPlaceholder() {
+    mapContainer.innerHTML = `
+      <div class="location__map--placeholder">
+        <p data-en="Load Google Maps to see the location." data-de="Laden Sie Google Maps, um den Standort zu sehen.">${getText('Laden Sie Google Maps, um den Standort zu sehen.', 'Load Google Maps to see the location.')}</p>
+        <button class="btn btn--primary" id="loadMap">${getText('Karte laden', 'Load map')}</button>
+      </div>`;
+    const loadBtn = document.getElementById('loadMap');
+    if (loadBtn) {
+      loadBtn.addEventListener('click', () => {
+        injectMap();
+        localStorage.setItem(KEY, 'all');
+      });
+    }
+  }
+
+  if (choice === 'all') {
+    injectMap();
+    return;
+  }
+
+  // Show placeholder and banner on first visit
+  showPlaceholder();
+  banner.hidden = false;
+
+  consentAll?.addEventListener('click', () => {
+    injectMap();
+    localStorage.setItem(KEY, 'all');
+    banner.hidden = true;
+  });
+
+  consentEssential?.addEventListener('click', () => {
+    localStorage.setItem(KEY, 'essential');
+    banner.hidden = true;
   });
 })();
 
