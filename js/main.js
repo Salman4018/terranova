@@ -202,10 +202,12 @@ function escHtml(str) {
 (function () {
   const burger   = document.getElementById('burger');
   const navLinks = document.getElementById('navLinks');
+  const nav      = document.getElementById('nav');
 
   burger.addEventListener('click', () => {
     const open = navLinks.classList.toggle('open');
     burger.classList.toggle('open', open);
+    nav.classList.toggle('menu-open', open);
     document.body.style.overflow = open ? 'hidden' : '';
   });
 
@@ -213,6 +215,7 @@ function escHtml(str) {
     a.addEventListener('click', () => {
       navLinks.classList.remove('open');
       burger.classList.remove('open');
+      nav.classList.remove('menu-open');
       document.body.style.overflow = '';
     });
   });
