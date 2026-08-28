@@ -37,6 +37,7 @@
       <li><a href="#about"    data-en="About"        data-de="Über uns">About</a></li>
       <li><a href="#menu"     data-en="Specialties"  data-de="Spezialitäten">Specialties</a></li>
       <li><a href="#hours"    data-en="Hours"        data-de="Öffnungszeiten">Hours</a></li>
+      <li><a href="#reviews"  data-en="Reviews"      data-de="Bewertungen">Reviews</a></li>
       <li><a href="#location" data-en="Find Us"      data-de="Standort">Find Us</a></li>
     </ul>
   </nav>
@@ -348,6 +349,74 @@
     </div>
   </section>
 
+  <!-- ═══════════════════════════════════════════ REVIEWS -->
+  <section class="reviews section" id="reviews">
+    <div class="container">
+      <p class="section__eyebrow reveal" data-en="What Guests Say" data-de="Was Gäste sagen">What Guests Say</p>
+      <div class="reviews__header">
+        <h2 class="section__title reveal reveal--delay-1"
+            data-en="Real Reviews"
+            data-de="Echte Bewertungen">
+          Real Reviews
+        </h2>
+        <a
+          href="https://search.google.com/local/writereview?placeid=ChIJ17LUOQDTuEcRZeLG8OCF06c"
+          target="_blank"
+          rel="noopener"
+          class="btn btn--primary reviews__cta reveal reveal--delay-2"
+          data-en="Leave a Review"
+          data-de="Bewertung schreiben"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Leave a Review
+        </a>
+      </div>
+
+      <!-- Summary bar -->
+      <div class="reviews__summary reveal reveal--delay-1">
+        <div class="reviews__score">
+          <span class="reviews__score-number" id="reviewScore">4.5</span>
+          <div class="reviews__score-right">
+            <div class="reviews__stars" id="reviewStars" aria-label="4.5 out of 5 stars">
+              <span class="star filled">★</span><span class="star filled">★</span>
+              <span class="star filled">★</span><span class="star filled">★</span>
+              <span class="star half">★</span>
+            </div>
+            <p class="reviews__count" id="reviewCount" data-en="Based on Google reviews" data-de="Basierend auf Google-Bewertungen">Based on Google reviews</p>
+            <a
+              href="https://www.google.com/maps/place/?q=place_id:ChIJ17LUOQDTuEcRZeLG8OCF06c"
+              target="_blank"
+              rel="noopener"
+              class="reviews__google-link"
+              data-en="View on Google Maps"
+              data-de="Auf Google Maps ansehen"
+            >View on Google Maps ↗</a>
+          </div>
+        </div>
+
+        <div class="reviews__bar-chart" id="reviewBars">
+          <!-- filled by JS -->
+          <div class="reviews__bar-row"><span class="reviews__bar-label">5 ★</span><div class="reviews__bar-track"><div class="reviews__bar-fill" style="width:70%"></div></div><span class="reviews__bar-pct">70%</span></div>
+          <div class="reviews__bar-row"><span class="reviews__bar-label">4 ★</span><div class="reviews__bar-track"><div class="reviews__bar-fill" style="width:20%"></div></div><span class="reviews__bar-pct">20%</span></div>
+          <div class="reviews__bar-row"><span class="reviews__bar-label">3 ★</span><div class="reviews__bar-track"><div class="reviews__bar-fill" style="width:5%"></div></div><span class="reviews__bar-pct">5%</span></div>
+          <div class="reviews__bar-row"><span class="reviews__bar-label">2 ★</span><div class="reviews__bar-track"><div class="reviews__bar-fill" style="width:3%"></div></div><span class="reviews__bar-pct">3%</span></div>
+          <div class="reviews__bar-row"><span class="reviews__bar-label">1 ★</span><div class="reviews__bar-track"><div class="reviews__bar-fill" style="width:2%"></div></div><span class="reviews__bar-pct">2%</span></div>
+        </div>
+      </div>
+
+      <!-- Review cards -->
+      <div class="reviews__cards" id="reviewCards">
+        <!-- populated by JS; static fallback shown if JS disabled -->
+        <noscript>
+          <p style="color:var(--cream-muted);text-align:center">Enable JavaScript to see live reviews.</p>
+        </noscript>
+      </div>
+
+      <!-- status line shown while loading / if API key missing -->
+      <p class="reviews__api-note" id="reviewsNote"></p>
+    </div>
+  </section>
+
   <!-- ═══════════════════════════════════════════ INSTAGRAM BANNER -->
   <section class="insta">
     <div class="insta__bg">
@@ -397,6 +466,7 @@
         <a href="#about"    data-en="About"        data-de="Über uns">About</a>
         <a href="#menu"     data-en="Specialties"  data-de="Spezialitäten">Specialties</a>
         <a href="#hours"    data-en="Hours"        data-de="Öffnungszeiten">Hours</a>
+        <a href="#reviews"  data-en="Reviews"      data-de="Bewertungen">Reviews</a>
         <a href="#location" data-en="Find Us"      data-de="Standort">Find Us</a>
       </nav>
 

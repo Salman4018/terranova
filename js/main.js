@@ -4,62 +4,286 @@
 
 'use strict';
 
-// ── Language toggle ──────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────
+   CONFIG  ← edit these two values to go live
+   ──────────────────────────────────────────────────────────────
+   GOOGLE_PLACE_ID   : find yours at https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder
+   GOOGLE_API_KEY    : create at https://console.cloud.google.com  (enable Places API)
+   ────────────────────────────────────────────────────────────── */
+const CONFIG = {
+  GOOGLE_PLACE_ID : 'ChIJ17LUOQDTuEcRZeLG8OCF06c',
+  GOOGLE_API_KEY  : '',          // ← paste your key here to enable live data
+  REVIEW_URL      : 'https://search.google.com/local/writereview?placeid=ChIJ17LUOQDTuEcRZeLG8OCF06c',
+  MAPS_URL        : 'https://www.google.com/maps/place/?q=place_id:ChIJ17LUOQDTuEcRZeLG8OCF06c',
+  MAX_REVIEWS     : 5,
+};
+
+/* ──────────────────────────────────────────────────────────────
+   MOCK DATA  (shown when API key is not set)
+   ────────────────────────────────────────────────────────────── */
+const MOCK_PLACE = {
+  rating       : 4.5,
+  reviewCount  : 47,
+  reviews: [
+    {
+      author : 'Sophie M.',
+      avatar : null,
+      rating : 5,
+      time   : '2 weeks ago',
+      text   : 'Sehr leckere Backwaren, alles frisch und mit viel Liebe gemacht. Das Team ist super nett, aufmerksam und sorgt für eine angenehme Atmosphäre. Komme auf jeden Fall wieder!',
+    },
+    {
+      author : 'Marco R.',
+      avatar : null,
+      rating : 5,
+      time   : '1 month ago',
+      text   : 'The best cannoli I have had outside of Sicily. The espresso is strong and perfectly extracted. A hidden gem in Ohligs — I stop by every Saturday morning.',
+    },
+    {
+      author : 'Laura K.',
+      avatar : null,
+      rating : 4,
+      time   : '1 month ago',
+      text   : 'Wunderschöne Atmosphäre und herrliche Mandel-Kekse. Ich nehme immer ein ganzes Tablett mit nach Hause. Der Kaffee ist auch erstklassig.',
+    },
+    {
+      author : 'Thomas B.',
+      avatar : null,
+      rating : 5,
+      time   : '2 months ago',
+      text   : 'Authentic Italian flavours right here in Solingen. The pastries are baked fresh every morning — you can taste the quality. Highly recommend the almond biscotti.',
+    },
+    {
+      author : 'Anna W.',
+      avatar : null,
+      rating : 4,
+      time   : '3 months ago',
+      text   : 'Schönes kleines Café mit echtem Charakter. Die Ricotta-Cannoli sind absolut köstlich. Ich freue mich schon auf den nächsten Besuch!',
+    },
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   REVIEWS
+   ═══════════════════════════════════════════════════════════════ */
+async function initReviews() {
+  const cardsEl  = document.getElementById('reviewCards');
+  const noteEl   = document.getElementById('reviewsNote');
+  if (!cardsEl) return;
+
+  // show skeleton while loading
+  renderSkeletons(cardsEl, 3);
+
+  if (CONFIG.GOOGLE_API_KEY) {
+    try {
+      await fetchLiveReviews(cardsEl, noteEl);
+    } catch (err) {
+      console.warn('[Terranova] Places API error:', err.message);
+      renderReviews(cardsEl, MOCK_PLACE);
+      if (noteEl) noteEl.textContent = 'Live reviews temporarily unavailable — showing cached data.';
+    }
+  } else {
+    // No key — use mock data immediately
+    renderReviews(cardsEl, MOCK_PLACE);
+    if (noteEl) {
+      noteEl.innerHTML =
+        'Sample reviews shown. ' +
+        '<a href="https://console.cloud.google.com" target="_blank" rel="noopener" ' +
+        'style="color:var(--terra);text-decoration:underline">Add a Google API key</a> ' +
+        'in js/main.js to display live data.';
+    }
+  }
+}
+
+/* Fetch via Places API (New) — field mask keeps it in the free tier */
+async function fetchLiveReviews(cardsEl, noteEl) {
+  const endpoint =
+    `https://places.googleapis.com/v1/places/${CONFIG.GOOGLE_PLACE_ID}` +
+    `?fields=rating,userRatingCount,reviews&languageCode=en&key=${CONFIG.GOOGLE_API_KEY}`;
+
+  const res = await fetch(endpoint, {
+    headers: { 'X-Goog-FieldMask': 'rating,userRatingCount,reviews' },
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+
+  if (data.error) throw new Error(data.error.message);
+
+  const place = {
+    rating      : data.rating       ?? MOCK_PLACE.rating,
+    reviewCount : data.userRatingCount ?? MOCK_PLACE.reviewCount,
+    reviews     : (data.reviews ?? []).slice(0, CONFIG.MAX_REVIEWS).map(r => ({
+      author : r.authorAttribution?.displayName ?? 'Google User',
+      avatar : r.authorAttribution?.photoUri    ?? null,
+      rating : r.rating ?? 5,
+      time   : r.relativePublishTimeDescription ?? '',
+      text   : r.text?.text ?? '',
+    })),
+  };
+
+  renderReviews(cardsEl, place);
+  updateSummary(place.rating, place.reviewCount);
+  if (noteEl) noteEl.textContent = '';
+}
+
+/* Render summary numbers */
+function updateSummary(rating, count) {
+  const scoreEl = document.getElementById('reviewScore');
+  const countEl = document.getElementById('reviewCount');
+  const starsEl = document.getElementById('reviewStars');
+
+  if (scoreEl) scoreEl.textContent = rating.toFixed(1);
+  if (countEl) {
+    const isDE = document.documentElement.lang === 'de';
+    countEl.textContent = isDE
+      ? `Basierend auf ${count} Google-Bewertungen`
+      : `Based on ${count} Google reviews`;
+  }
+  if (starsEl) starsEl.innerHTML = buildStars(rating);
+}
+
+/* Build star HTML for a given rating */
+function buildStars(rating) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    if (rating >= i)               html += '<span class="star filled">★</span>';
+    else if (rating >= i - 0.5)    html += '<span class="star half">★</span>';
+    else                           html += '<span class="star">★</span>';
+  }
+  return html;
+}
+
+/* Render review cards into container */
+function renderReviews(container, place) {
+  container.innerHTML = '';
+  updateSummary(place.rating, place.reviewCount);
+
+  place.reviews.forEach(review => {
+    const initials = review.author
+      .split(' ')
+      .map(w => w[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+
+    const avatarHtml = review.avatar
+      ? `<img src="${review.avatar}" alt="${review.author}" loading="lazy" />`
+      : initials;
+
+    const card = document.createElement('article');
+    card.className = 'review-card';
+    card.innerHTML = `
+      <div class="review-card__header">
+        <div class="review-card__avatar">${avatarHtml}</div>
+        <div>
+          <p class="review-card__name">${escHtml(review.author)}</p>
+          <p class="review-card__date">${escHtml(review.time)}</p>
+        </div>
+      </div>
+      <div class="review-card__stars">${buildStars(review.rating)}</div>
+      <p class="review-card__text">${escHtml(review.text)}</p>
+      <div class="review-card__source">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Google Review
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  // trigger scroll reveal on new cards
+  container.querySelectorAll('.review-card').forEach(el => observeReveal(el));
+}
+
+/* Skeleton loader */
+function renderSkeletons(container, count) {
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    container.innerHTML += `
+      <div class="review-skeleton">
+        <div class="skeleton-line skeleton-line--short"></div>
+        <div class="skeleton-line skeleton-line--med"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line skeleton-line--short"></div>
+      </div>`;
+  }
+}
+
+/* Tiny HTML escaper */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LANGUAGE TOGGLE
+   ═══════════════════════════════════════════════════════════════ */
 (function () {
   let currentLang = 'en';
 
-  const btn      = document.getElementById('langToggle');
-  const labelEN  = btn.querySelector('.lang-toggle__en');
-  const labelDE  = btn.querySelector('.lang-toggle__de');
+  const btn     = document.getElementById('langToggle');
+  const labelEN = btn.querySelector('.lang-toggle__en');
+  const labelDE = btn.querySelector('.lang-toggle__de');
 
   function applyLang(lang) {
     currentLang = lang;
-
-    // toggle active class on button labels
     labelEN.classList.toggle('active', lang === 'en');
     labelDE.classList.toggle('active', lang === 'de');
 
-    // update all elements that carry data-en / data-de
     document.querySelectorAll('[data-en]').forEach(el => {
       const text = el.getAttribute('data-' + lang);
       if (!text) return;
-
-      // support <br> in strings
-      if (text.includes('<br')) {
-        el.innerHTML = text;
-      } else {
-        el.textContent = text;
-      }
+      if (text.includes('<br')) el.innerHTML = text;
+      else el.textContent = text;
     });
 
-    // update html lang attribute for accessibility
     document.documentElement.lang = lang;
-
-    // re-apply today highlight labels (day names change)
     highlightToday();
+
+    // re-render review count label in correct language
+    const scoreEl = document.getElementById('reviewScore');
+    if (scoreEl) {
+      const count = document.getElementById('reviewCount');
+      const score = parseFloat(scoreEl.textContent);
+      if (count && !isNaN(score)) {
+        // extract the number from current text
+        const match = count.textContent.match(/\d+/);
+        const n = match ? match[0] : '47';
+        count.textContent = lang === 'de'
+          ? `Basierend auf ${n} Google-Bewertungen`
+          : `Based on ${n} Google reviews`;
+      }
+    }
   }
 
-  btn.addEventListener('click', () => {
-    applyLang(currentLang === 'en' ? 'de' : 'en');
-  });
+  btn.addEventListener('click', () => applyLang(currentLang === 'en' ? 'de' : 'en'));
 })();
 
-
-// ── Sticky nav on scroll ─────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   STICKY NAV
+   ═══════════════════════════════════════════════════════════════ */
 (function () {
   const nav = document.getElementById('nav');
-  const onScroll = () => {
-    nav.classList.toggle('scrolled', window.scrollY > 40);
-  };
+  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 40);
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 })();
 
-
-// ── Mobile burger menu ───────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE BURGER
+   ═══════════════════════════════════════════════════════════════ */
 (function () {
-  const burger    = document.getElementById('burger');
-  const navLinks  = document.getElementById('navLinks');
+  const burger   = document.getElementById('burger');
+  const navLinks = document.getElementById('navLinks');
 
   burger.addEventListener('click', () => {
     const open = navLinks.classList.toggle('open');
@@ -67,7 +291,6 @@
     document.body.style.overflow = open ? 'hidden' : '';
   });
 
-  // close on link click
   navLinks.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', () => {
       navLinks.classList.remove('open');
@@ -77,99 +300,109 @@
   });
 })();
 
-
-// ── Scroll reveal via IntersectionObserver ───────────────────────
-(function () {
-  const revealEls = document.querySelectorAll('.reveal');
-
-  if (!('IntersectionObserver' in window)) {
-    revealEls.forEach(el => el.classList.add('visible'));
-    return;
-  }
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    },
+/* ═══════════════════════════════════════════════════════════════
+   SCROLL REVEAL
+   ═══════════════════════════════════════════════════════════════ */
+const revealObserver = (() => {
+  if (!('IntersectionObserver' in window)) return null;
+  return new IntersectionObserver(
+    entries => entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        revealObserver.unobserve(e.target);
+      }
+    }),
     { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
   );
-
-  revealEls.forEach(el => observer.observe(el));
 })();
 
+function observeReveal(el) {
+  if (revealObserver) revealObserver.observe(el);
+  else el.classList.add('visible');
+}
 
-// ── Today's hours highlight + open/closed status ─────────────────
+document.querySelectorAll('.reveal').forEach(observeReveal);
+
+/* ═══════════════════════════════════════════════════════════════
+   TODAY HOURS HIGHLIGHT
+   ═══════════════════════════════════════════════════════════════ */
 function highlightToday() {
   const now    = new Date();
-  const day    = now.getDay();  // 0 = Sunday
-  const hour   = now.getHours();
-  const minute = now.getMinutes();
-  const time   = hour + minute / 60;
+  const day    = now.getDay();
+  const time   = now.getHours() + now.getMinutes() / 60;
+  const isDE   = document.documentElement.lang === 'de';
 
-  const isGerman = document.documentElement.lang === 'de';
-
-  // remove previous today class
   document.querySelectorAll('.hours__row--today').forEach(r =>
     r.classList.remove('hours__row--today')
   );
-
-  // highlight today's row
   const todayRow = document.querySelector(`.hours__row[data-day="${day}"]`);
   if (todayRow) todayRow.classList.add('hours__row--today');
 
-  // determine if currently open
   const statusEl = document.getElementById('hoursStatus');
   if (!statusEl) return;
 
   let open = false;
-  if (day === 1) {
-    // Monday — closed
-    open = false;
-  } else if (day === 0) {
-    // Sunday 07:30–22:00
-    open = time >= 7.5 && time < 22;
-  } else {
-    // Tue–Sat 06:00–22:00
-    open = time >= 6 && time < 22;
-  }
+  if (day === 1)       open = false;
+  else if (day === 0)  open = time >= 7.5 && time < 22;
+  else                 open = time >= 6   && time < 22;
 
   if (open) {
-    statusEl.textContent = isGerman ? 'Jetzt geöffnet' : 'Open now';
+    statusEl.textContent = isDE ? 'Jetzt geöffnet' : 'Open now';
     statusEl.className   = 'hours__status hours__status--open';
   } else {
-    statusEl.textContent = isGerman ? 'Derzeit geschlossen' : 'Currently closed';
+    statusEl.textContent = isDE ? 'Derzeit geschlossen' : 'Currently closed';
     statusEl.className   = 'hours__status hours__status--closed';
   }
 }
 
 highlightToday();
 
-
-// ── Footer year ───────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER YEAR
+   ═══════════════════════════════════════════════════════════════ */
 (function () {
   const el = document.getElementById('year');
   if (el) el.textContent = new Date().getFullYear();
 })();
 
-
-// ── Smooth parallax on hero image (desktop only) ──────────────────
+/* ═══════════════════════════════════════════════════════════════
+   HERO PARALLAX
+   ═══════════════════════════════════════════════════════════════ */
 (function () {
   const heroImg = document.querySelector('.hero__img');
   if (!heroImg || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
   let ticking = false;
   window.addEventListener('scroll', () => {
     if (ticking) return;
     requestAnimationFrame(() => {
-      const scrolled = window.scrollY;
-      heroImg.style.transform = `translateY(${scrolled * 0.28}px)`;
+      heroImg.style.transform = `translateY(${window.scrollY * 0.28}px)`;
       ticking = false;
     });
     ticking = true;
   }, { passive: true });
 })();
+
+/* ═══════════════════════════════════════════════════════════════
+   BAR CHART ANIMATION (trigger when summary enters view)
+   ═══════════════════════════════════════════════════════════════ */
+(function () {
+  const summary = document.querySelector('.reviews__summary');
+  if (!summary || !('IntersectionObserver' in window)) return;
+  const obs = new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting) {
+      summary.querySelectorAll('.reviews__bar-fill').forEach(bar => {
+        bar.style.animationPlayState = 'running';
+      });
+      obs.disconnect();
+    }
+  }, { threshold: 0.3 });
+  obs.observe(summary);
+
+  // Pause bars initially
+  document.querySelectorAll('.reviews__bar-fill').forEach(bar => {
+    bar.style.animationPlayState = 'paused';
+  });
+})();
+
+/* ── Boot ── */
+initReviews();
