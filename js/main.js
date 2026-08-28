@@ -146,7 +146,7 @@ function escHtml(str) {
    LANGUAGE TOGGLE
    ═══════════════════════════════════════════════════════════════ */
 (function () {
-  let currentLang = 'en';
+  let currentLang = 'de';
 
   const btn     = document.getElementById('langToggle');
   const labelEN = btn.querySelector('.lang-toggle__en');
@@ -184,6 +184,9 @@ function escHtml(str) {
   }
 
   btn.addEventListener('click', () => applyLang(currentLang === 'en' ? 'de' : 'en'));
+
+  // init with DE
+  applyLang('de');
 })();
 
 /* ═══════════════════════════════════════════════════════════════
