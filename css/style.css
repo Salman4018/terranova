@@ -247,11 +247,12 @@ a:focus-visible {
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
 }
-/* always solid bg when mobile menu is open */
+/* always solid bg when mobile menu is open; switch instantly so it doesn't fight the panel animation */
 .nav.menu-open {
   background: #0a0604 !important;
   backdrop-filter: none !important;
   border-bottom: 1px solid var(--border);
+  transition: none;
 }
 
 .nav__logo {
@@ -339,7 +340,7 @@ a:focus-visible {
   height: 1.5px;
   background: currentColor;
   border-radius: 99px;
-  transition: transform 0.3s, opacity 0.3s;
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
 }
 .nav__burger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
 .nav__burger.open span:nth-child(2) { opacity: 0; }
@@ -981,11 +982,13 @@ a:focus-visible {
     gap: 4px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s var(--ease-out-expo);
+    will-change: opacity, transform;
+    transform: translateY(-16px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
     padding: 40px 40px 60px;
     overflow-y: auto;
   }
-  .nav__links.open { opacity: 1; pointer-events: all; }
+  .nav__links.open { opacity: 1; pointer-events: all; transform: translateY(0); }
   .nav__links li { width: 100%; text-align: center; }
   .nav__links a {
     display: block;
