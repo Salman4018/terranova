@@ -1,0 +1,43 @@
+{
+  "rating": 4.5,
+  "reviewCount": 47,
+  "updatedAt": "2026-08-28T06:00:00Z",
+  "source": "seed",
+  "reviews": [
+    {
+      "author": "Sophie M.",
+      "avatar": null,
+      "rating": 5,
+      "time": "2 weeks ago",
+      "text": "Sehr leckere Backwaren, alles frisch und mit viel Liebe gemacht. Das Team ist super nett, aufmerksam und sorgt für eine angenehme Atmosphäre. Komme auf jeden Fall wieder!"
+    },
+    {
+      "author": "Marco R.",
+      "avatar": null,
+      "rating": 5,
+      "time": "1 month ago",
+      "text": "The best cannoli I have had outside of Sicily. The espresso is strong and perfectly extracted. A hidden gem in Ohligs — I stop by every Saturday morning."
+    },
+    {
+      "author": "Laura K.",
+      "avatar": null,
+      "rating": 4,
+      "time": "1 month ago",
+      "text": "Wunderschöne Atmosphäre und herrliche Mandel-Kekse. Ich nehme immer ein ganzes Tablett mit nach Hause. Der Kaffee ist auch erstklassig."
+    },
+    {
+      "author": "Thomas B.",
+      "avatar": null,
+      "rating": 5,
+      "time": "2 months ago",
+      "text": "Authentic Italian flavours right here in Solingen. The pastries are baked fresh every morning — you can taste the quality. Highly recommend the almond biscotti."
+    },
+    {
+      "author": "Anna W.",
+      "avatar": null,
+      "rating": 4,
+      "time": "3 months ago",
+      "text": "Schönes kleines Café mit echtem Charakter. Die Ricotta-Cannoli sind absolut köstlich. Ich freue mich schon auf den nächsten Besuch!"
+    }
+  ]
+}

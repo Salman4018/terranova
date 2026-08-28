@@ -5,126 +5,44 @@
 'use strict';
 
 /* ──────────────────────────────────────────────────────────────
-   CONFIG  ← edit these two values to go live
-   ──────────────────────────────────────────────────────────────
-   GOOGLE_PLACE_ID   : find yours at https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder
-   GOOGLE_API_KEY    : create at https://console.cloud.google.com  (enable Places API)
+   CONFIG
    ────────────────────────────────────────────────────────────── */
 const CONFIG = {
-  GOOGLE_PLACE_ID : 'ChIJ17LUOQDTuEcRZeLG8OCF06c',
-  GOOGLE_API_KEY  : '',          // ← paste your key here to enable live data
-  REVIEW_URL      : 'https://search.google.com/local/writereview?placeid=ChIJ17LUOQDTuEcRZeLG8OCF06c',
-  MAPS_URL        : 'https://www.google.com/maps/place/?q=place_id:ChIJ17LUOQDTuEcRZeLG8OCF06c',
-  MAX_REVIEWS     : 5,
-};
-
-/* ──────────────────────────────────────────────────────────────
-   MOCK DATA  (shown when API key is not set)
-   ────────────────────────────────────────────────────────────── */
-const MOCK_PLACE = {
-  rating       : 4.5,
-  reviewCount  : 47,
-  reviews: [
-    {
-      author : 'Sophie M.',
-      avatar : null,
-      rating : 5,
-      time   : '2 weeks ago',
-      text   : 'Sehr leckere Backwaren, alles frisch und mit viel Liebe gemacht. Das Team ist super nett, aufmerksam und sorgt für eine angenehme Atmosphäre. Komme auf jeden Fall wieder!',
-    },
-    {
-      author : 'Marco R.',
-      avatar : null,
-      rating : 5,
-      time   : '1 month ago',
-      text   : 'The best cannoli I have had outside of Sicily. The espresso is strong and perfectly extracted. A hidden gem in Ohligs — I stop by every Saturday morning.',
-    },
-    {
-      author : 'Laura K.',
-      avatar : null,
-      rating : 4,
-      time   : '1 month ago',
-      text   : 'Wunderschöne Atmosphäre und herrliche Mandel-Kekse. Ich nehme immer ein ganzes Tablett mit nach Hause. Der Kaffee ist auch erstklassig.',
-    },
-    {
-      author : 'Thomas B.',
-      avatar : null,
-      rating : 5,
-      time   : '2 months ago',
-      text   : 'Authentic Italian flavours right here in Solingen. The pastries are baked fresh every morning — you can taste the quality. Highly recommend the almond biscotti.',
-    },
-    {
-      author : 'Anna W.',
-      avatar : null,
-      rating : 4,
-      time   : '3 months ago',
-      text   : 'Schönes kleines Café mit echtem Charakter. Die Ricotta-Cannoli sind absolut köstlich. Ich freue mich schon auf den nächsten Besuch!',
-    },
-  ],
+  REVIEWS_JSON : 'data/reviews.json',   // updated daily by GitHub Actions
+  REVIEW_URL   : 'https://search.google.com/local/writereview?placeid=ChIJ17LUOQDTuEcRZeLG8OCF06c',
+  MAPS_URL     : 'https://www.google.com/maps/place/?q=place_id:ChIJ17LUOQDTuEcRZeLG8OCF06c',
 };
 
 /* ═══════════════════════════════════════════════════════════════
-   REVIEWS
+   REVIEWS — loads from data/reviews.json (no API key needed)
+   Updated automatically every day by .github/workflows/scrape-reviews.yml
    ═══════════════════════════════════════════════════════════════ */
 async function initReviews() {
-  const cardsEl  = document.getElementById('reviewCards');
-  const noteEl   = document.getElementById('reviewsNote');
+  const cardsEl = document.getElementById('reviewCards');
+  const noteEl  = document.getElementById('reviewsNote');
   if (!cardsEl) return;
 
-  // show skeleton while loading
   renderSkeletons(cardsEl, 3);
 
-  if (CONFIG.GOOGLE_API_KEY) {
-    try {
-      await fetchLiveReviews(cardsEl, noteEl);
-    } catch (err) {
-      console.warn('[Terranova] Places API error:', err.message);
-      renderReviews(cardsEl, MOCK_PLACE);
-      if (noteEl) noteEl.textContent = 'Live reviews temporarily unavailable — showing cached data.';
+  try {
+    // Cache-bust with date so visitors always get today's data
+    const today = new Date().toISOString().slice(0, 10);
+    const res   = await fetch(`${CONFIG.REVIEWS_JSON}?v=${today}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    renderReviews(cardsEl, data);
+
+    if (noteEl && data.updatedAt) {
+      const date = new Date(data.updatedAt).toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      });
+      noteEl.textContent = `Reviews last refreshed ${date}`;
     }
-  } else {
-    // No key — use mock data immediately
-    renderReviews(cardsEl, MOCK_PLACE);
-    if (noteEl) {
-      noteEl.innerHTML =
-        'Sample reviews shown. ' +
-        '<a href="https://console.cloud.google.com" target="_blank" rel="noopener" ' +
-        'style="color:var(--terra);text-decoration:underline">Add a Google API key</a> ' +
-        'in js/main.js to display live data.';
-    }
+  } catch (err) {
+    console.warn('[Terranova] Could not load reviews.json:', err.message);
+    cardsEl.innerHTML = '<p style="color:var(--cream-muted);text-align:center;grid-column:1/-1">Reviews temporarily unavailable.</p>';
   }
-}
-
-/* Fetch via Places API (New) — field mask keeps it in the free tier */
-async function fetchLiveReviews(cardsEl, noteEl) {
-  const endpoint =
-    `https://places.googleapis.com/v1/places/${CONFIG.GOOGLE_PLACE_ID}` +
-    `?fields=rating,userRatingCount,reviews&languageCode=en&key=${CONFIG.GOOGLE_API_KEY}`;
-
-  const res = await fetch(endpoint, {
-    headers: { 'X-Goog-FieldMask': 'rating,userRatingCount,reviews' },
-  });
-
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-
-  if (data.error) throw new Error(data.error.message);
-
-  const place = {
-    rating      : data.rating       ?? MOCK_PLACE.rating,
-    reviewCount : data.userRatingCount ?? MOCK_PLACE.reviewCount,
-    reviews     : (data.reviews ?? []).slice(0, CONFIG.MAX_REVIEWS).map(r => ({
-      author : r.authorAttribution?.displayName ?? 'Google User',
-      avatar : r.authorAttribution?.photoUri    ?? null,
-      rating : r.rating ?? 5,
-      time   : r.relativePublishTimeDescription ?? '',
-      text   : r.text?.text ?? '',
-    })),
-  };
-
-  renderReviews(cardsEl, place);
-  updateSummary(place.rating, place.reviewCount);
-  if (noteEl) noteEl.textContent = '';
 }
 
 /* Render summary numbers */
