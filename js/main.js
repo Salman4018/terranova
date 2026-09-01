@@ -39,9 +39,10 @@ async function initReviews() {
   renderSkeletons(cardsEl, 3);
 
   try {
-    // Cache-bust with date so visitors always get today's data
-    const today = new Date().toISOString().slice(0, 10);
-    const res   = await fetch(`${CONFIG.REVIEWS_JSON}?v=${today}`);
+    // The reviews workflow can publish multiple updates in one day.
+    const res = await fetch(`${CONFIG.REVIEWS_JSON}?v=${Date.now()}`, {
+      cache: 'no-store',
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
