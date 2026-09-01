@@ -19,6 +19,14 @@ const CONFIG = {
   MAP_EMBED    : 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2497.6!2d7.0004332!3d51.1616309!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b8d300390ab2d7%3A0xa7d38500f0c6e265!2sD%C3%BCsseldorfer%20Str.%2041%2C%2042697%20Solingen!5e0!3m2!1sen!2sde!4v1700000000000!5m2!1sen!2sde',
 };
 
+const LOCALES = {
+  de: 'de-DE',
+  en: 'en-GB',
+  it: 'it-IT',
+};
+
+let loadedReviews = null;
+
 /* ═══════════════════════════════════════════════════════════════
    REVIEWS — loads from data/reviews.json (no API key needed)
    Updated automatically every day by .github/workflows/scrape-reviews.yml
@@ -37,20 +45,25 @@ async function initReviews() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
+    loadedReviews = data;
     renderReviews(cardsEl, data);
 
     if (noteEl && data.updatedAt) {
-      const date = new Date(data.updatedAt).toLocaleDateString(currentLang() === 'de' ? 'de-DE' : 'en-GB', {
-        day: 'numeric', month: 'long', year: 'numeric',
-      });
-      noteEl.textContent = currentLang() === 'de'
-        ? `Bewertungen zuletzt aktualisiert: ${date}`
-        : `Reviews last refreshed: ${date}`;
+      updateReviewRefreshNote(data.updatedAt);
     }
   } catch (err) {
     console.warn('[Terranova] Could not load reviews.json:', err.message);
-    cardsEl.innerHTML = `<p style="color:var(--cream-muted);text-align:center;grid-column:1/-1" data-en="Reviews temporarily unavailable." data-de="Bewertungen vorübergehend nicht verfügbar.">${getText('Bewertungen vorübergehend nicht verfügbar.', 'Reviews temporarily unavailable.')}</p>`;
+    cardsEl.innerHTML = `<p style="color:var(--cream-muted);text-align:center;grid-column:1/-1" data-i18n="reviews.unavailable">${t('reviews.unavailable')}</p>`;
   }
+}
+
+function updateReviewRefreshNote(updatedAt) {
+  const noteEl = document.getElementById('reviewsNote');
+  if (!noteEl || !updatedAt) return;
+  const date = new Date(updatedAt).toLocaleDateString(LOCALES[currentLang()], {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+  noteEl.textContent = t('reviews.refreshed', { date });
 }
 
 /* Update summary numbers and distribution bars */
@@ -61,17 +74,11 @@ function updateSummary(rating, count, reviews) {
 
   if (scoreEl) scoreEl.textContent = rating.toFixed(1);
   if (countEl) {
-    countEl.textContent = currentLang() === 'de'
-      ? `Basierend auf ${count} Google-Bewertungen`
-      : `Based on ${count} Google reviews`;
+    countEl.textContent = reviewCountText(count);
   }
   if (starsEl) {
     starsEl.innerHTML = buildStars(rating);
-    starsEl.setAttribute('aria-label',
-      currentLang() === 'de'
-        ? `${rating.toFixed(1)} von 5 Sternen`
-        : `${rating.toFixed(1)} out of 5 stars`
-    );
+    starsEl.setAttribute('aria-label', ratingText(rating));
   }
 
   renderBarChart(reviews, count);
@@ -117,7 +124,7 @@ function renderBarChart(reviews, total) {
           <div class="reviews__bar-fill" style="width:${pct}%;transform:scaleX(0)"></div>
         </div>
         <span class="reviews__bar-pct">${pct}%</span>
-        <span class="sr-only">${count} ${stars === 1 ? 'one-star' : stars + '-star'} reviews</span>
+        <span class="sr-only reviews__bar-description" data-count="${count}" data-stars="${stars}">${barReviewText(count, stars)}</span>
       </div>`;
   }
   container.innerHTML = html;
@@ -138,7 +145,7 @@ function renderReviews(container, place) {
   updateSummary(place.rating, place.reviewCount, place.reviews);
 
   if (!Array.isArray(place.reviews) || !place.reviews.length) {
-    container.innerHTML = `<p style="color:var(--cream-muted);text-align:center;grid-column:1/-1">${getText('Keine Bewertungen verfügbar.', 'No reviews available.')}</p>`;
+    container.innerHTML = `<p style="color:var(--cream-muted);text-align:center;grid-column:1/-1" data-i18n="reviews.none">${t('reviews.none')}</p>`;
     return;
   }
 
@@ -156,16 +163,17 @@ function renderReviews(container, place) {
 
     const card = document.createElement('article');
     card.className = 'review-card';
+    card.dataset.rating = String(review.rating);
     card.setAttribute('tabindex', '-1');
     card.innerHTML = `
       <div class="review-card__header">
         <div class="review-card__avatar" aria-hidden="true">${avatarHtml}</div>
         <div>
-          <p class="review-card__name">${escHtml(review.author || getText('Anonym', 'Anonymous'))}</p>
+          <p class="review-card__name">${escHtml(review.author || t('reviews.anonymous'))}</p>
           <p class="review-card__date">${escHtml(review.time || '')}</p>
         </div>
       </div>
-      <div class="review-card__stars" aria-label="${escHtml(String(review.rating))} ${currentLang() === 'de' ? 'von 5 Sternen' : 'out of 5 stars'}">${buildStars(Number(review.rating))}</div>
+      <div class="review-card__stars" aria-label="${escHtml(ratingText(Number(review.rating)))}">${buildStars(Number(review.rating))}</div>
       <p class="review-card__text">${escHtml(review.text || '')}</p>
       <div class="review-card__source">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -174,7 +182,7 @@ function renderReviews(container, place) {
           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        Google Review
+        <span class="review-card__source-label">${t('reviews.googleReview')}</span>
       </div>
     `;
     container.appendChild(card);
@@ -220,74 +228,125 @@ function currentLang() {
   return _currentLang;
 }
 
-function getText(deText, enText) {
-  return _currentLang === 'de' ? deText : enText;
+function t(key, variables = {}) {
+  const translations = window.TRANSLATIONS?.[key];
+  if (!translations) {
+    console.warn(`[Terranova] Missing translation key: ${key}`);
+    return key;
+  }
+  const text = translations[_currentLang] || translations.de || key;
+  return Object.entries(variables).reduce(
+    (result, [name, value]) => result.replaceAll(`{${name}}`, String(value)),
+    text
+  );
+}
+
+function reviewCountText(count) {
+  return t('reviews.count', { count });
+}
+
+function ratingText(rating) {
+  return t('reviews.rating', { rating: Number(rating).toFixed(1) });
+}
+
+function barReviewText(count, stars) {
+  return t(stars === 1 ? 'reviews.barOne' : 'reviews.barMany', { count, stars });
+}
+
+function updateAccessibilityLanguage() {
+  const labels = {
+    '#langToggle': 'a11y.languageGroup',
+    '.nav__logo': 'a11y.home',
+    '#burger': 'a11y.menu',
+    '.hero__scroll': 'a11y.scrollDown',
+    '.footer__nav': 'a11y.footerNav',
+    '.footer__social a[href^="tel:"]': 'a11y.phone',
+  };
+  const imageAlts = {
+    '.hero__img': 'image.heroAlt',
+    '.about__img': 'image.aboutAlt',
+    '.insta__img': 'image.instagramAlt',
+  };
+  Object.entries(labels).forEach(([selector, key]) => {
+    document.querySelector(selector)?.setAttribute('aria-label', t(key));
+  });
+  Object.entries(imageAlts).forEach(([selector, key]) => {
+    document.querySelector(selector)?.setAttribute('alt', t(key));
+  });
+  document.querySelector('#mapContainer iframe')?.setAttribute('title', t('location.mapTitle'));
+  const mapPrompt = document.querySelector('.location__map--placeholder p');
+  const mapButton = document.getElementById('loadMap');
+  if (mapPrompt) mapPrompt.textContent = t('location.mapPrompt');
+  if (mapButton) mapButton.textContent = t('location.loadMap');
+}
+
+function updateReviewLanguage() {
+  if (!loadedReviews) return;
+
+  const countEl = document.getElementById('reviewCount');
+  const starsEl = document.getElementById('reviewStars');
+  if (countEl) countEl.textContent = reviewCountText(loadedReviews.reviewCount);
+  if (starsEl) starsEl.setAttribute('aria-label', ratingText(loadedReviews.rating));
+  updateReviewRefreshNote(loadedReviews.updatedAt);
+
+  document.querySelectorAll('.review-card').forEach(card => {
+    const rating = Number(card.dataset.rating);
+    card.querySelector('.review-card__stars')?.setAttribute('aria-label', ratingText(rating));
+    const sourceLabel = card.querySelector('.review-card__source-label');
+    if (sourceLabel) sourceLabel.textContent = t('reviews.googleReview');
+  });
+
+  document.querySelectorAll('.reviews__bar-description').forEach(description => {
+    description.textContent = barReviewText(
+      Number(description.dataset.count),
+      Number(description.dataset.stars)
+    );
+  });
 }
 
 (function () {
-  const btn     = document.getElementById('langToggle');
-  if (!btn) return;
-  const labelEN = btn.querySelector('.lang-toggle__en');
-  const labelDE = btn.querySelector('.lang-toggle__de');
+  const control = document.getElementById('langToggle');
+  if (!control) return;
+  const options = Array.from(control.querySelectorAll('[data-lang]'));
+  const languages = ['de', 'en', 'it'];
+  const storageKey = 'terranova-language';
 
   function setMetaLanguage() {
     document.documentElement.lang = _currentLang;
+    document.title = t('meta.title');
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) {
-      metaDesc.setAttribute('content',
-        _currentLang === 'de'
-          ? 'Authentisches italienisches Café und Bäckerei in Solingen-Ohligs. Frisch gebackene Backwaren, Espresso, Cannoli und mehr.'
-          : 'Authentic Italian café and bakery in Solingen-Ohligs. Freshly baked pastries, espresso, cannoli and more.'
-      );
-    }
+    if (metaDesc) metaDesc.setAttribute('content', t('meta.description'));
   }
 
   window.applyLang = function applyLang(lang) {
+    if (!languages.includes(lang)) lang = 'de';
     _currentLang = lang;
-    if (labelEN) labelEN.classList.toggle('active', lang === 'en');
-    if (labelDE) labelDE.classList.toggle('active', lang === 'de');
-    btn.setAttribute('aria-label',
-      lang === 'de' ? 'Sprache wechseln (DE)' : 'Change language (EN)'
-    );
-    btn.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
+    options.forEach(option => {
+      const active = option.dataset.lang === lang;
+      option.classList.toggle('active', active);
+      option.setAttribute('aria-pressed', String(active));
+    });
 
-    document.querySelectorAll('[data-en]').forEach(el => {
-      const text = el.getAttribute('data-' + lang);
-      if (!text) return;
-      if (text.includes('<br')) el.innerHTML = text;
-      else el.textContent = text;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      el.innerHTML = t(el.dataset.i18nHtml);
     });
 
     setMetaLanguage();
+    updateAccessibilityLanguage();
     highlightToday();
-
-    // Re-render review summary label in correct language without reloading data
-    const scoreEl = document.getElementById('reviewScore');
-    const countEl = document.getElementById('reviewCount');
-    if (scoreEl && countEl) {
-      const match = countEl.textContent.match(/\d+/);
-      const n = match ? match[0] : '';
-      countEl.textContent = lang === 'de'
-        ? `Basierend auf ${n} Google-Bewertungen`
-        : `Based on ${n} Google reviews`;
-    }
-
-    // Update review stars aria-label if present
-    const starsEl = document.getElementById('reviewStars');
-    if (starsEl) {
-      const score = parseFloat(scoreEl?.textContent || '0');
-      starsEl.setAttribute('aria-label',
-        lang === 'de'
-          ? `${score.toFixed(1)} von 5 Sternen`
-          : `${score.toFixed(1)} out of 5 stars`
-      );
-    }
+    updateReviewLanguage();
+    localStorage.setItem(storageKey, lang);
   };
 
-  btn.addEventListener('click', () => applyLang(_currentLang === 'en' ? 'de' : 'en'));
+  control.addEventListener('click', event => {
+    const option = event.target.closest('[data-lang]');
+    if (option) applyLang(option.dataset.lang);
+  });
 
-  // init with DE
-  applyLang('de');
+  applyLang(localStorage.getItem(storageKey) || 'de');
 })();
 
 /* ═══════════════════════════════════════════════════════════════
@@ -418,10 +477,10 @@ function highlightToday() {
   }
 
   if (open) {
-    statusEl.textContent = getText('Jetzt geöffnet', 'Open now');
+    statusEl.textContent = t('hours.openNow');
     statusEl.className   = 'hours__status hours__status--open';
   } else {
-    statusEl.textContent = getText('Derzeit geschlossen', 'Currently closed');
+    statusEl.textContent = t('hours.closedNow');
     statusEl.className   = 'hours__status hours__status--closed';
   }
 }
@@ -468,7 +527,7 @@ highlightToday();
 
   function injectMap() {
     const iframe = document.createElement('iframe');
-    iframe.title = getText('Terranova Standort', 'Terranova location');
+    iframe.title = t('location.mapTitle');
     iframe.src = CONFIG.MAP_EMBED;
     iframe.setAttribute('allowfullscreen', '');
     iframe.setAttribute('loading', 'lazy');
@@ -480,8 +539,8 @@ highlightToday();
   function showPlaceholder() {
     mapContainer.innerHTML = `
       <div class="location__map--placeholder">
-        <p data-en="Load Google Maps to see the location." data-de="Laden Sie Google Maps, um den Standort zu sehen.">${getText('Laden Sie Google Maps, um den Standort zu sehen.', 'Load Google Maps to see the location.')}</p>
-        <button class="btn btn--primary" id="loadMap">${getText('Karte laden', 'Load map')}</button>
+        <p>${t('location.mapPrompt')}</p>
+        <button class="btn btn--primary" id="loadMap">${t('location.loadMap')}</button>
       </div>`;
     const loadBtn = document.getElementById('loadMap');
     if (loadBtn) {

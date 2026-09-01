@@ -27,6 +27,7 @@ terranova/
 ├── css/
 │   └── style.css                       # All styles
 ├── js/
+│   ├── translations.js                 # Centralized EN / DE / IT copy
 │   └── main.js                         # All interactivity
 ├── images/                             # Local image assets + favicons
 │   ├── hero.jpg
@@ -60,8 +61,8 @@ Google Places API is not used. Instead a GitHub Actions workflow scrapes the **p
 - **Workflow:** `.github/workflows/scrape-reviews.yml` — runs daily at 06:00 UTC, can be triggered manually
 - **Hardening:** rotating User-Agent strings, exponential backoff retries, JSON validation in CI
 
-### Bilingual EN / DE
-All user-facing strings are duplicated as `data-en` / `data-de` HTML attributes. A single JS toggle (`langToggle` button) swaps all text by reading those attributes. **Default language is German (DE)** and the default visible text is also German to avoid language flash.
+### Trilingual EN / DE / IT
+All user-facing strings live in `js/translations.js` and are referenced from HTML with `data-i18n` keys. Use `data-i18n-html` only for trusted translations that require markup such as `<br>`. The `langToggle` control provides direct buttons for each language. **Default language is German (DE)** and the default visible HTML text is also German to avoid language flash and support visitors without JavaScript.
 
 ### No Build Step
 The site is pure static files. GitHub Pages serves `index.html` directly. `.nojekyll` prevents Jekyll processing.
@@ -113,7 +114,7 @@ Functions and IIFEs in order:
 | Name | Purpose |
 |---|---|
 | `CONFIG` | Central config incl. Maps embed URL |
-| `currentLang()` / `getText()` | Global helpers used by multiple features |
+| `currentLang()` / `t()` | Global language and keyed translation helpers used by multiple features |
 | `initReviews()` | Fetches `data/reviews.json`, renders cards + summary |
 | `updateSummary()` | Updates score number, star display, count, bar chart |
 | `buildStars()` | Returns star HTML for a given float rating |
@@ -121,7 +122,7 @@ Functions and IIFEs in order:
 | `renderReviews()` | Populates review card HTML from data object |
 | `renderSkeletons()` | Shows shimmer placeholder cards while loading |
 | `escHtml()` | Minimal HTML entity escaper |
-| Language toggle IIFE | Swaps `data-en`/`data-de` attributes; updates `lang`, meta description, aria-labels |
+| `t()` / Language toggle IIFE | Reads `js/translations.js`; updates keyed content, `lang`, metadata, and aria-labels |
 | Sticky nav IIFE | Adds `.scrolled` class after 40px scroll |
 | Mobile burger IIFE | Toggles `.open` + `.menu-open`, manages `aria-expanded` and focus trap, Escape to close |
 | Scroll reveal observer | Attaches `IntersectionObserver` to `.reveal` elements |
@@ -157,7 +158,8 @@ Rows in `index.html` use `data-opens` / `data-closes` attributes so `js/main.js`
 
 ### Add a new menu item / specialty card
 1. Copy an existing `<article class="card">` block in `index.html`
-2. Update `data-en`, `data-de`, icon emoji, and description
+2. Add the title and description translations to `js/translations.js`
+3. Reference those keys with `data-i18n` and update the icon emoji
 3. No CSS changes needed — grid auto-fits
 
 ### Change brand colours
@@ -169,7 +171,8 @@ Edit only the `:root` block at the top of `css/style.css`:
 
 ### Add a new page section
 1. Add HTML `<section>` with `class="section"` and an `id`
-2. Add nav link in both the `<nav>` and `<footer>` with `data-en`/`data-de` attributes
+2. Add one translation key with `de`, `en`, and `it` values to `js/translations.js`
+3. Reference that key from both the `<nav>` and `<footer>` with `data-i18n`
 3. Use `.container`, `.section__eyebrow`, `.section__title` for consistent styling
 4. Add `.reveal` to elements for scroll animation
 
@@ -194,7 +197,8 @@ Push to `main` branch — GitHub Pages auto-deploys within ~60 seconds. No build
 - Do **not** introduce npm, a bundler, or a framework — the zero-dependency constraint is intentional
 - Do **not** commit API keys or secrets
 - Do **not** modify `data/reviews.json` manually — it is managed by the scraper
-- Keep all text strings bilingual (`data-en` + `data-de` on every user-facing element)
+- Keep every key in `js/translations.js` trilingual with `de`, `en`, and `it` values
+- Keep German fallback text inside `index.html` for no-JavaScript visitors
 - Test responsive layout at 375px, 768px, and 1280px before committing style changes
 - Google Maps iframe must only load after user consent (handled by `js/main.js`)
 - Keep image assets in `images/` and prefer local files over remote hotlinks for production reliability

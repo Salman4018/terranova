@@ -23,6 +23,7 @@
   <meta property="og:image:height" content="1280" />
   <meta property="og:locale" content="de_DE" />
   <meta property="og:locale:alternate" content="en_US" />
+  <meta property="og:locale:alternate" content="it_IT" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Terranova Ohligs" />
   <meta name="twitter:description" content="Italienisches Café &amp; Bäckerei in Solingen-Ohligs." />
@@ -74,17 +75,17 @@
 </head>
 <body>
 
-  <a href="#main" class="skip-link" data-en="Skip to content" data-de="Zum Inhalt springen">Zum Inhalt springen</a>
+  <a href="#main" class="skip-link" data-i18n="skip.content">Zum Inhalt springen</a>
 
   <!-- Privacy banner for Google Maps embed + Fonts -->
   <aside class="privacy-banner" id="privacyBanner" aria-live="polite" hidden>
     <div class="privacy-banner__inner container">
       <p>
-        <span data-en="This page loads Google Maps and Google Fonts." data-de="Diese Seite lädt Google Maps und Google Fonts.">Diese Seite lädt Google Maps und Google Fonts.</span>
+        <span data-i18n="privacy.message">Diese Seite lädt Google Maps und Google Fonts.</span>
       </p>
       <div class="privacy-banner__actions">
-        <button class="btn btn--primary" id="consentAll" data-en="Accept" data-de="Akzeptieren">Akzeptieren</button>
-        <button class="btn btn--ghost" id="consentEssential" data-en="Essential only" data-de="Nur Essentials">Nur Essentials</button>
+        <button class="btn btn--primary" id="consentAll" data-i18n="privacy.accept">Akzeptieren</button>
+        <button class="btn btn--ghost" id="consentEssential" data-i18n="privacy.essential">Nur Essentials</button>
       </div>
     </div>
   </aside>
@@ -96,11 +97,11 @@
     </a>
 
     <div class="nav__right">
-      <button class="lang-toggle" id="langToggle" aria-label="Sprache wechseln" aria-pressed="false">
-        <span class="lang-toggle__en" aria-hidden="true">EN</span>
-        <span class="lang-toggle__sep" aria-hidden="true">/</span>
-        <span class="lang-toggle__de active" aria-hidden="true">DE</span>
-      </button>
+      <div class="lang-toggle" id="langToggle" role="group" aria-label="Sprache wählen">
+        <button type="button" class="lang-toggle__option" data-lang="en" aria-label="English" aria-pressed="false">EN</button>
+        <button type="button" class="lang-toggle__option active" data-lang="de" aria-label="Deutsch" aria-pressed="true">DE</button>
+        <button type="button" class="lang-toggle__option" data-lang="it" aria-label="Italiano" aria-pressed="false">IT</button>
+      </div>
 
       <button class="nav__burger" id="burger" aria-label="Menü" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span><span></span>
@@ -108,11 +109,11 @@
     </div>
 
     <ul class="nav__links" id="navLinks" role="menubar">
-      <li role="none"><a role="menuitem" href="#about"    data-en="About"        data-de="Über uns">Über uns</a></li>
-      <li role="none"><a role="menuitem" href="#menu"     data-en="Specialties"  data-de="Spezialitäten">Spezialitäten</a></li>
-      <li role="none"><a role="menuitem" href="#hours"    data-en="Hours"        data-de="Öffnungszeiten">Öffnungszeiten</a></li>
-      <li role="none"><a role="menuitem" href="#reviews"  data-en="Reviews"      data-de="Bewertungen">Bewertungen</a></li>
-      <li role="none"><a role="menuitem" href="#location" data-en="Find Us"      data-de="Standort">Standort</a></li>
+      <li role="none"><a role="menuitem" href="#about" data-i18n="nav.about">Über uns</a></li>
+      <li role="none"><a role="menuitem" href="#menu" data-i18n="nav.specialties">Spezialitäten</a></li>
+      <li role="none"><a role="menuitem" href="#hours" data-i18n="nav.hours">Öffnungszeiten</a></li>
+      <li role="none"><a role="menuitem" href="#reviews" data-i18n="nav.reviews">Bewertungen</a></li>
+      <li role="none"><a role="menuitem" href="#location" data-i18n="nav.location">Standort</a></li>
     </ul>
   </nav>
 
@@ -135,27 +136,25 @@
       </div>
 
       <div class="hero__content">
-        <p class="hero__eyebrow reveal" data-en="Solingen · Ohligs · Since the beginning" data-de="Solingen · Ohligs · Seit dem ersten Tag">Solingen · Ohligs · Seit dem ersten Tag</p>
+        <p class="hero__eyebrow reveal" data-i18n="hero.eyebrow">Solingen · Ohligs · Seit dem ersten Tag</p>
         <h1 class="hero__title reveal reveal--delay-1">
-          <em data-en="Italian" data-de="Italienische">Italienische</em><br />
-          <span data-en="flavours," data-de="Aromen,">Aromen,</span><br />
-          <span class="hero__title-outline" data-en="crafted daily." data-de="täglich frisch.">täglich frisch.</span>
+          <em data-i18n="hero.titleLead">Italienische</em><br />
+          <span data-i18n="hero.titleMiddle">Aromen,</span><br />
+          <span class="hero__title-outline" data-i18n="hero.titleEnd">täglich frisch.</span>
         </h1>
-        <p class="hero__sub reveal reveal--delay-2"
-           data-en="Fresh pastries, artisan espresso &amp; handmade cannoli — baked with love in Ohligs."
-           data-de="Frische Backwaren, handgefertigter Espresso &amp; hausgemachte Cannoli — täglich mit Liebe gebacken.">
+        <p class="hero__sub reveal reveal--delay-2" data-i18n="hero.subtitle">
           Frische Backwaren, handgefertigter Espresso &amp; hausgemachte Cannoli — täglich mit Liebe gebacken.
         </p>
         <div class="hero__actions reveal reveal--delay-3">
-          <a href="#menu" class="btn btn--primary" data-en="Our Specialties" data-de="Unsere Spezialitäten">Unsere Spezialitäten</a>
-          <a href="#location" class="btn btn--ghost" data-en="Find Us" data-de="Wo wir sind">Wo wir sind</a>
+          <a href="#menu" class="btn btn--primary" data-i18n="hero.specialties">Unsere Spezialitäten</a>
+          <a href="#location" class="btn btn--ghost" data-i18n="hero.findUs">Wo wir sind</a>
         </div>
       </div>
 
       <div class="hero__badge reveal reveal--delay-3">
         <span class="hero__badge-rating">4.5</span>
         <span class="hero__badge-stars" aria-hidden="true">★★★★★</span>
-        <span class="hero__badge-label" data-en="Google Reviews" data-de="Google Bewertungen">Google Bewertungen</span>
+        <span class="hero__badge-label" data-i18n="hero.googleReviews">Google Bewertungen</span>
       </div>
 
       <a href="#about" class="hero__scroll" aria-label="Nach unten scrollen">
@@ -181,29 +180,25 @@
           </div>
 
           <div class="about__text">
-            <p class="section__eyebrow reveal" data-en="Our Story" data-de="Unsere Geschichte">Unsere Geschichte</p>
-            <h2 class="section__title reveal reveal--delay-1"
-                data-en="A little piece<br/>of Italy in Ohligs."
-                data-de="Ein Stück<br/>Italien in Ohligs.">
+            <p class="section__eyebrow reveal" data-i18n="about.eyebrow">Unsere Geschichte</p>
+            <h2 class="section__title reveal reveal--delay-1" data-i18n-html="about.title">
               Ein Stück<br/>Italien in Ohligs.
             </h2>
-            <p class="about__body reveal reveal--delay-2"
-               data-en="Terranova is where Italian baking tradition meets the heart of Solingen. Every morning we fill our kitchen with the scent of fresh bread, warm pastry, and rich espresso — inviting you to slow down, sit in, and savour something real."
-               data-de="Terranova ist der Ort, wo italienische Backtradition auf das Herz von Solingen trifft. Jeden Morgen füllen wir unsere Küche mit dem Duft von frischem Brot, warmen Backwaren und reichem Espresso — und laden Sie ein, innezuhalten und etwas Echtes zu genießen.">
+            <p class="about__body reveal reveal--delay-2" data-i18n="about.body">
               Terranova ist der Ort, wo italienische Backtradition auf das Herz von Solingen trifft. Jeden Morgen füllen wir unsere Küche mit dem Duft von frischem Brot, warmen Backwaren und reichem Espresso — und laden Sie ein, innezuhalten und etwas Echtes zu genießen.
             </p>
             <div class="about__stats reveal reveal--delay-3">
               <div class="about__stat">
                 <span class="about__stat-number">06:00</span>
-                <span class="about__stat-label" data-en="Opens daily" data-de="Täglich geöffnet">Täglich geöffnet</span>
+                <span class="about__stat-label" data-i18n="about.opens">Täglich geöffnet</span>
               </div>
               <div class="about__stat">
                 <span class="about__stat-number">22:00</span>
-                <span class="about__stat-label" data-en="Last orders" data-de="Letzte Bestellung">Letzte Bestellung</span>
+                <span class="about__stat-label" data-i18n="about.lastOrders">Letzte Bestellung</span>
               </div>
               <div class="about__stat">
                 <span class="about__stat-number">100%</span>
-                <span class="about__stat-label" data-en="Made fresh" data-de="Frisch gemacht">Frisch gemacht</span>
+                <span class="about__stat-label" data-i18n="about.fresh">Frisch gemacht</span>
               </div>
             </div>
           </div>
@@ -214,33 +209,31 @@
     <!-- ═══════════════════════════════════════════ MARQUEE -->
     <div class="marquee" aria-hidden="true">
       <div class="marquee__track">
-        <span data-en="Espresso" data-de="Espresso">Espresso</span><span class="marquee__dot">·</span>
-        <span data-en="Cannoli" data-de="Cannoli">Cannoli</span><span class="marquee__dot">·</span>
-        <span data-en="Cakes" data-de="Kuchen">Kuchen</span><span class="marquee__dot">·</span>
-        <span data-en="Pastries" data-de="Gebäck">Gebäck</span><span class="marquee__dot">·</span>
-        <span data-en="Almond pastry" data-de="Mandelgebäck">Mandelgebäck</span><span class="marquee__dot">·</span>
-        <span data-en="Ricotta" data-de="Ricotta">Ricotta</span><span class="marquee__dot">·</span>
-        <span data-en="Cappuccino" data-de="Cappuccino">Cappuccino</span><span class="marquee__dot">·</span>
-        <span data-en="Biscotti" data-de="Biscotti">Biscotti</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.espresso">Espresso</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.cannoli">Cannoli</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.cakes">Kuchen</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.pastries">Gebäck</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.almond">Mandelgebäck</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.ricotta">Ricotta</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.cappuccino">Cappuccino</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.biscotti">Biscotti</span><span class="marquee__dot">·</span>
         <!-- duplicate for seamless loop -->
-        <span data-en="Espresso" data-de="Espresso">Espresso</span><span class="marquee__dot">·</span>
-        <span data-en="Cannoli" data-de="Cannoli">Cannoli</span><span class="marquee__dot">·</span>
-        <span data-en="Cakes" data-de="Kuchen">Kuchen</span><span class="marquee__dot">·</span>
-        <span data-en="Pastries" data-de="Gebäck">Gebäck</span><span class="marquee__dot">·</span>
-        <span data-en="Almond pastry" data-de="Mandelgebäck">Mandelgebäck</span><span class="marquee__dot">·</span>
-        <span data-en="Ricotta" data-de="Ricotta">Ricotta</span><span class="marquee__dot">·</span>
-        <span data-en="Cappuccino" data-de="Cappuccino">Cappuccino</span><span class="marquee__dot">·</span>
-        <span data-en="Biscotti" data-de="Biscotti">Biscotti</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.espresso">Espresso</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.cannoli">Cannoli</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.cakes">Kuchen</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.pastries">Gebäck</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.almond">Mandelgebäck</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.ricotta">Ricotta</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.cappuccino">Cappuccino</span><span class="marquee__dot">·</span>
+        <span data-i18n="product.biscotti">Biscotti</span><span class="marquee__dot">·</span>
       </div>
     </div>
 
     <!-- ═══════════════════════════════════════════ MENU / SPECIALTIES -->
     <section class="menu section" id="menu">
       <div class="container">
-        <p class="section__eyebrow reveal" data-en="What We Make" data-de="Was wir machen">Was wir machen</p>
-        <h2 class="section__title reveal reveal--delay-1"
-            data-en="Our Specialties"
-            data-de="Unsere Spezialitäten">
+        <p class="section__eyebrow reveal" data-i18n="menu.eyebrow">Was wir machen</p>
+        <h2 class="section__title reveal reveal--delay-1" data-i18n="hero.specialties">
           Unsere Spezialitäten
         </h2>
 
@@ -248,60 +241,48 @@
 
           <article class="card reveal">
             <div class="card__icon">☕</div>
-            <h3 class="card__title" data-en="Espresso" data-de="Espresso">Espresso</h3>
-            <p class="card__desc"
-               data-en="Dark-roasted Italian beans, extracted to perfection. The soul of every good morning."
-               data-de="Dunkle italienische Bohnen, perfekt extrahiert. Die Seele eines guten Morgens.">
+            <h3 class="card__title" data-i18n="product.espresso">Espresso</h3>
+            <p class="card__desc" data-i18n="menu.espressoDescription">
               Dunkle italienische Bohnen, perfekt extrahiert. Die Seele eines guten Morgens.
             </p>
           </article>
 
           <article class="card reveal reveal--delay-1">
             <div class="card__icon">🥐</div>
-            <h3 class="card__title" data-en="Pastries" data-de="Gebäck">Gebäck</h3>
-            <p class="card__desc"
-               data-en="Buttery, flaky, freshly baked every morning. From classic croissants to Italian sfogliatelle."
-               data-de="Buttrig, blättrig, jeden Morgen frisch gebacken. Von klassischen Croissants bis zu Sfogliatelle.">
+            <h3 class="card__title" data-i18n="product.pastries">Gebäck</h3>
+            <p class="card__desc" data-i18n="menu.pastriesDescription">
               Buttrig, blättrig, jeden Morgen frisch gebacken. Von klassischen Croissants bis zu Sfogliatelle.
             </p>
           </article>
 
           <article class="card reveal reveal--delay-2">
             <div class="card__icon">🍮</div>
-            <h3 class="card__title" data-en="Cannoli" data-de="Cannoli">Cannoli</h3>
-            <p class="card__desc"
-               data-en="Crispy shells filled with sweetened ricotta — a Sicilian classic made the traditional way."
-               data-de="Knusprige Schalen mit gesüßter Ricotta — ein sizilianischer Klassiker nach traditioneller Art.">
+            <h3 class="card__title" data-i18n="product.cannoli">Cannoli</h3>
+            <p class="card__desc" data-i18n="menu.cannoliDescription">
               Knusprige Schalen mit gesüßter Ricotta — ein sizilianischer Klassiker nach traditioneller Art.
             </p>
           </article>
 
           <article class="card reveal">
             <div class="card__icon">🎂</div>
-            <h3 class="card__title" data-en="Cakes" data-de="Kuchen">Kuchen</h3>
-            <p class="card__desc"
-               data-en="Whole cakes and single slices — seasonal flavours, family recipes, and celebration specials."
-               data-de="Ganze Kuchen und Stücke — saisonale Aromen, Familienrezepte und Festtagsspezialitäten.">
+            <h3 class="card__title" data-i18n="product.cakes">Kuchen</h3>
+            <p class="card__desc" data-i18n="menu.cakesDescription">
               Ganze Kuchen und Stücke — saisonale Aromen, Familienrezepte und Festtagsspezialitäten.
             </p>
           </article>
 
           <article class="card reveal reveal--delay-1">
             <div class="card__icon">🌰</div>
-            <h3 class="card__title" data-en="Almond Pastry" data-de="Mandelgebäck">Mandelgebäck</h3>
-            <p class="card__desc"
-               data-en="Soft and fragrant almond biscuits — perfect alongside your afternoon espresso."
-               data-de="Weiche, duftende Mandelkekse — perfekt zum nachmittäglichen Espresso.">
+            <h3 class="card__title" data-i18n="product.almond">Mandelgebäck</h3>
+            <p class="card__desc" data-i18n="menu.almondDescription">
               Weiche, duftende Mandelkekse — perfekt zum nachmittäglichen Espresso.
             </p>
           </article>
 
           <article class="card reveal reveal--delay-2">
             <div class="card__icon">🥛</div>
-            <h3 class="card__title" data-en="Cappuccino" data-de="Cappuccino">Cappuccino</h3>
-            <p class="card__desc"
-               data-en="Velvety steamed milk meets bold espresso — the Italian morning ritual done right."
-               data-de="Samtige Milch trifft kräftigen Espresso — das italienische Morgenritual, richtig gemacht.">
+            <h3 class="card__title" data-i18n="product.cappuccino">Cappuccino</h3>
+            <p class="card__desc" data-i18n="menu.cappuccinoDescription">
               Samtige Milch trifft kräftigen Espresso — das italienische Morgenritual, richtig gemacht.
             </p>
           </article>
@@ -315,15 +296,11 @@
       <div class="container">
         <div class="hours__grid">
           <div class="hours__text">
-            <p class="section__eyebrow reveal" data-en="Visit Us" data-de="Besuchen Sie uns">Besuchen Sie uns</p>
-            <h2 class="section__title reveal reveal--delay-1"
-                data-en="Opening Hours"
-                data-de="Öffnungszeiten">
+            <p class="section__eyebrow reveal" data-i18n="hours.eyebrow">Besuchen Sie uns</p>
+            <h2 class="section__title reveal reveal--delay-1" data-i18n="hours.title">
               Öffnungszeiten
             </h2>
-            <p class="hours__note reveal reveal--delay-2"
-               data-en="We bake fresh every morning. Come early for the best selection."
-               data-de="Wir backen jeden Morgen frisch. Kommen Sie früh für die beste Auswahl.">
+            <p class="hours__note reveal reveal--delay-2" data-i18n="hours.note">
               Wir backen jeden Morgen frisch. Kommen Sie früh für die beste Auswahl.
             </p>
           </div>
@@ -332,31 +309,31 @@
             <table class="hours__table">
               <tbody>
                 <tr class="hours__row hours__row--closed" data-day="1">
-                  <td class="hours__day" data-en="Monday" data-de="Montag">Montag</td>
-                  <td class="hours__time" data-en="Closed" data-de="Geschlossen">Geschlossen</td>
+                  <td class="hours__day" data-i18n="hours.monday">Montag</td>
+                  <td class="hours__time" data-i18n="hours.closed">Geschlossen</td>
                 </tr>
                 <tr class="hours__row" data-day="2" data-opens="06:00" data-closes="22:00">
-                  <td class="hours__day" data-en="Tuesday" data-de="Dienstag">Dienstag</td>
+                  <td class="hours__day" data-i18n="hours.tuesday">Dienstag</td>
                   <td class="hours__time">06:00 – 22:00</td>
                 </tr>
                 <tr class="hours__row" data-day="3" data-opens="06:00" data-closes="22:00">
-                  <td class="hours__day" data-en="Wednesday" data-de="Mittwoch">Mittwoch</td>
+                  <td class="hours__day" data-i18n="hours.wednesday">Mittwoch</td>
                   <td class="hours__time">06:00 – 22:00</td>
                 </tr>
                 <tr class="hours__row" data-day="4" data-opens="06:00" data-closes="22:00">
-                  <td class="hours__day" data-en="Thursday" data-de="Donnerstag">Donnerstag</td>
+                  <td class="hours__day" data-i18n="hours.thursday">Donnerstag</td>
                   <td class="hours__time">06:00 – 22:00</td>
                 </tr>
                 <tr class="hours__row" data-day="5" data-opens="06:00" data-closes="22:00">
-                  <td class="hours__day" data-en="Friday" data-de="Freitag">Freitag</td>
+                  <td class="hours__day" data-i18n="hours.friday">Freitag</td>
                   <td class="hours__time">06:00 – 22:00</td>
                 </tr>
                 <tr class="hours__row" data-day="6" data-opens="06:00" data-closes="22:00">
-                  <td class="hours__day" data-en="Saturday" data-de="Samstag">Samstag</td>
+                  <td class="hours__day" data-i18n="hours.saturday">Samstag</td>
                   <td class="hours__time">06:00 – 22:00</td>
                 </tr>
                 <tr class="hours__row" data-day="0" data-opens="07:30" data-closes="22:00">
-                  <td class="hours__day" data-en="Sunday" data-de="Sonntag">Sonntag</td>
+                  <td class="hours__day" data-i18n="hours.sunday">Sonntag</td>
                   <td class="hours__time">07:30 – 22:00</td>
                 </tr>
               </tbody>
@@ -370,10 +347,8 @@
     <!-- ═══════════════════════════════════════════ LOCATION -->
     <section class="location section" id="location">
       <div class="container">
-        <p class="section__eyebrow reveal" data-en="Where to Find Us" data-de="Wo Sie uns finden">Wo Sie uns finden</p>
-        <h2 class="section__title reveal reveal--delay-1"
-            data-en="In the Heart of Ohligs"
-            data-de="Im Herzen von Ohligs">
+        <p class="section__eyebrow reveal" data-i18n="location.eyebrow">Wo Sie uns finden</p>
+        <h2 class="section__title reveal reveal--delay-1" data-i18n="location.title">
           Im Herzen von Ohligs
         </h2>
       </div>
@@ -384,29 +359,29 @@
             <div class="location__detail">
               <span class="location__icon" aria-hidden="true">📍</span>
               <div>
-                <strong data-en="Address" data-de="Adresse">Adresse</strong>
-                <p>Düsseldorfer Str. 41<br />42697 Solingen, Germany</p>
+                <strong data-i18n="location.address">Adresse</strong>
+                <p data-i18n-html="location.addressValue">Düsseldorfer Str. 41<br />42697 Solingen, Deutschland</p>
               </div>
             </div>
             <div class="location__detail">
               <span class="location__icon" aria-hidden="true">📞</span>
               <div>
-                <strong data-en="Phone" data-de="Telefon">Telefon</strong>
+                <strong data-i18n="location.phone">Telefon</strong>
                 <p><a href="tel:+4921223086710">+49 212 23086710</a></p>
               </div>
             </div>
             <div class="location__detail">
               <span class="location__icon" aria-hidden="true">🚗</span>
               <div>
-                <strong data-en="Parking" data-de="Parken">Parken</strong>
-                <p data-en="Paid parking available nearby" data-de="Kostenpflichtige Parkplätze in der Nähe">Kostenpflichtige Parkplätze in der Nähe</p>
+                <strong data-i18n="location.parking">Parken</strong>
+                <p data-i18n="location.parkingValue">Kostenpflichtige Parkplätze in der Nähe</p>
               </div>
             </div>
             <div class="location__detail">
               <span class="location__icon" aria-hidden="true">♿</span>
               <div>
-                <strong data-en="Accessibility" data-de="Barrierefreiheit">Barrierefreiheit</strong>
-                <p data-en="Wheelchair accessible entrance" data-de="Rollstuhlgerechter Eingang">Rollstuhlgerechter Eingang</p>
+                <strong data-i18n="location.accessibility">Barrierefreiheit</strong>
+                <p data-i18n="location.accessibilityValue">Rollstuhlgerechter Eingang</p>
               </div>
             </div>
             <a
@@ -414,8 +389,7 @@
               target="_blank"
               rel="noopener"
               class="btn btn--primary"
-              data-en="Get Directions"
-              data-de="Route berechnen"
+              data-i18n="location.directions"
             >Route berechnen</a>
           </div>
         </div>
@@ -437,11 +411,9 @@
     <!-- ═══════════════════════════════════════════ REVIEWS -->
     <section class="reviews section" id="reviews">
       <div class="container">
-        <p class="section__eyebrow reveal" data-en="What Guests Say" data-de="Was Gäste sagen">Was Gäste sagen</p>
+        <p class="section__eyebrow reveal" data-i18n="reviews.eyebrow">Was Gäste sagen</p>
         <div class="reviews__header">
-          <h2 class="section__title reveal reveal--delay-1"
-              data-en="Real Reviews"
-              data-de="Echte Bewertungen">
+          <h2 class="section__title reveal reveal--delay-1" data-i18n="reviews.title">
             Echte Bewertungen
           </h2>
           <a
@@ -449,11 +421,9 @@
             target="_blank"
             rel="noopener"
             class="btn btn--primary reviews__cta reveal reveal--delay-2"
-            data-en="Leave a Review"
-            data-de="Bewertung schreiben"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span data-en="Leave a Review" data-de="Bewertung schreiben">Bewertung schreiben</span>
+            <span data-i18n="reviews.leave">Bewertung schreiben</span>
           </a>
         </div>
 
@@ -467,14 +437,13 @@
                 <span class="star filled" aria-hidden="true">★</span><span class="star filled" aria-hidden="true">★</span>
                 <span class="star half" aria-hidden="true">★</span>
               </div>
-              <p class="reviews__count" id="reviewCount" data-en="Based on Google reviews" data-de="Basierend auf Google-Bewertungen">Basierend auf Google-Bewertungen</p>
+              <p class="reviews__count" id="reviewCount" data-i18n="reviews.countFallback">Basierend auf Google-Bewertungen</p>
               <a
                 href="https://www.google.com/maps/place/?q=place_id:ChIJ17LUOQDTuEcRZeLG8OCF06c"
                 target="_blank"
                 rel="noopener"
                 class="reviews__google-link"
-                data-en="View on Google Maps"
-                data-de="Auf Google Maps ansehen"
+                data-i18n="reviews.viewMaps"
               >Auf Google Maps ansehen ↗</a>
             </div>
           </div>
@@ -488,7 +457,7 @@
         <div class="reviews__cards" id="reviewCards">
           <!-- populated by JS; static fallback shown if JS disabled -->
           <noscript>
-            <p style="color:var(--cream-muted);text-align:center;grid-column:1/-1" data-en="Enable JavaScript to see live reviews." data-de="Aktivieren Sie JavaScript, um aktuelle Bewertungen zu sehen.">Aktivieren Sie JavaScript, um aktuelle Bewertungen zu sehen.</p>
+            <p style="color:var(--cream-muted);text-align:center;grid-column:1/-1" data-i18n="reviews.noScript">Aktivieren Sie JavaScript, um aktuelle Bewertungen zu sehen.</p>
           </noscript>
         </div>
 
@@ -513,14 +482,10 @@
       </div>
       <div class="insta__content reveal">
         <p class="insta__handle">@terranova_ohligs</p>
-        <h2 class="insta__title"
-            data-en="Follow Our Story"
-            data-de="Folge unserer Geschichte">
+        <h2 class="insta__title" data-i18n="instagram.title">
           Folge unserer Geschichte
         </h2>
-        <p class="insta__sub"
-           data-en="Daily specials, behind-the-scenes baking &amp; seasonal treats on Instagram."
-           data-de="Tagesangebote, Blicke hinter die Kulissen &amp; saisonale Leckereien auf Instagram.">
+        <p class="insta__sub" data-i18n="instagram.subtitle">
           Tagesangebote, Blicke hinter die Kulissen &amp; saisonale Leckereien auf Instagram.
         </p>
         <a
@@ -528,8 +493,7 @@
           target="_blank"
           rel="noopener"
           class="btn btn--white"
-          data-en="Visit our Instagram"
-          data-de="Instagram besuchen"
+          data-i18n="instagram.visit"
         >Instagram besuchen</a>
       </div>
     </section>
@@ -543,17 +507,17 @@
         <span class="footer__logo">
           <span class="footer__logo-letter" style="--i:0">T</span><span class="footer__logo-letter" style="--i:1">e</span><span class="footer__logo-letter" style="--i:2">r</span><span class="footer__logo-letter" style="--i:3">r</span><span class="footer__logo-letter" style="--i:4">a</span><span class="footer__logo-letter" style="--i:5">n</span><span class="footer__logo-letter" style="--i:6">o</span><span class="footer__logo-letter" style="--i:7">v</span><span class="footer__logo-letter" style="--i:8">a</span>
         </span>
-        <p data-en="Italian Café &amp; Bakery · Solingen, Germany" data-de="Italienisches Café &amp; Bäckerei · Solingen, Deutschland">
+        <p data-i18n="footer.tagline">
           Italienisches Café &amp; Bäckerei · Solingen, Deutschland
         </p>
       </div>
 
       <nav class="footer__nav" aria-label="Footer navigation">
-        <a href="#about"    data-en="About"        data-de="Über uns">Über uns</a>
-        <a href="#menu"     data-en="Specialties"  data-de="Spezialitäten">Spezialitäten</a>
-        <a href="#hours"    data-en="Hours"        data-de="Öffnungszeiten">Öffnungszeiten</a>
-        <a href="#reviews"  data-en="Reviews"      data-de="Bewertungen">Bewertungen</a>
-        <a href="#location" data-en="Find Us"      data-de="Standort">Standort</a>
+        <a href="#about" data-i18n="nav.about">Über uns</a>
+        <a href="#menu" data-i18n="nav.specialties">Spezialitäten</a>
+        <a href="#hours" data-i18n="nav.hours">Öffnungszeiten</a>
+        <a href="#reviews" data-i18n="nav.reviews">Bewertungen</a>
+        <a href="#location" data-i18n="nav.location">Standort</a>
       </nav>
 
       <div class="footer__social">
@@ -572,11 +536,12 @@
 
     <div class="footer__bottom">
       <p>&copy; <span id="year"></span> Terranova Ohligs.
-        <span data-en="All rights reserved." data-de="Alle Rechte vorbehalten.">Alle Rechte vorbehalten.</span>
+        <span data-i18n="footer.rights">Alle Rechte vorbehalten.</span>
       </p>
     </div>
   </footer>
 
+  <script src="js/translations.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

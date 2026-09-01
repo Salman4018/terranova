@@ -11,7 +11,7 @@ A modern, responsive, production-ready website for **Terranova**, an Italian caf
 - **Production-ready static site** — zero build step, zero backend.
 - **Dark espresso design** — premium Italian café aesthetic with terracotta and gold accents.
 - **Fully responsive** — mobile-first, tested from 375px to 1440px.
-- **Bilingual EN / DE** — instant language toggle, default German.
+- **Trilingual EN / DE / IT** — instant language toggle, default German.
 - **Live Google Reviews** — scraped daily via GitHub Actions, no API key required.
 - **Privacy-first maps** — Google Maps iframe loads only after explicit consent; `noscript` fallback embed included.
 - **GDPR-aware consent banner** — for Google Maps and Google Fonts, persisted in `localStorage`.
@@ -50,6 +50,7 @@ terranova/
 ├── css/
 │   └── style.css                 # Complete stylesheet
 ├── js/
+│   ├── translations.js           # Centralized EN / DE / IT copy
 │   └── main.js                   # All interactivity
 ├── images/                       # Local image assets and favicons
 │   ├── hero.jpg
@@ -146,7 +147,7 @@ All colours are CSS custom properties in `:root` at the top of `css/style.css`:
 
 ### Add a specialty card
 
-Copy any `<article class="card">` in `index.html` and update the `data-en`, `data-de`, emoji, and description. The grid auto-fits.
+Copy any `<article class="card">` in `index.html`, add trilingual title and description keys to `js/translations.js`, and reference them with `data-i18n`. Update the emoji as needed; the grid auto-fits.
 
 ### Change default language
 
@@ -156,7 +157,11 @@ In `js/main.js`, find:
 let _currentLang = 'de';
 ```
 
-Change to `'en'` for English default. You must also update the default visible text in `index.html` so non-JS visitors see the correct language.
+German remains the no-JavaScript fallback. The JavaScript language is restored from `localStorage` and otherwise defaults to German in `js/main.js`. To change that behavior, update the fallback passed to `applyLang` and the visible fallback text in `index.html`.
+
+### Update translations
+
+Add or edit copy in `js/translations.js`. Each translation key must contain `de`, `en`, and `it` values. Reference plain text with `data-i18n="key.name"`; use `data-i18n-html` only for trusted translations containing markup such as `<br>`.
 
 ### Update opening hours
 
