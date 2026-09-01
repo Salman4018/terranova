@@ -6,9 +6,17 @@ and writes it to data/reviews.json.
 
 No API key required. Uses the public Maps HTML page + regex extraction.
 Falls back to keeping the existing reviews.json untouched if scraping fails.
+
+Hardening measures in this version:
+- rotating User-Agent strings
+- exponential backoff retries
+- jittered delays
+- better structured HTML fallback parsing
+- validates output before writing
 """
 
 import json
+import random
 import re
 import sys
 import time
@@ -17,17 +25,35 @@ from pathlib import Path
 import requests
 
 # ── Config ────────────────────────────────────────────────────────────────────
-PLACE_ID   = "ChIJ17LUOQDTuEcRZeLG8OCF06c"
-OUTPUT     = Path(__file__).parent.parent / "data" / "reviews.json"
+PLACE_ID    = "ChIJ17LUOQDTuEcRZeLG8OCF06c"
+OUTPUT      = Path(__file__).parent.parent / "data" / "reviews.json"
 MAX_REVIEWS = 5
-HEADERS = {
-    "User-Agent": (
+RETRIES     = 3
+TIMEOUT     = 25
+
+USER_AGENTS = [
+    (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/126.0.0.0 Safari/537.36"
+    ),
+    (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/125.0.0.0 Safari/537.36"
+    ),
+    (
+        "Mozilla/5.0 (X11; Linux x86_64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     ),
-    "Accept-Language": "en-US,en;q=0.9",
-}
+    (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) "
+        "Gecko/20100101 Firefox/127.0"
+    ),
+]
+
+LANGUAGES = ["en", "de"]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -42,48 +68,90 @@ def load_existing() -> dict:
         "rating": 4.5,
         "reviewCount": 47,
         "updatedAt": "",
+        "source": "fallback",
         "reviews": [],
     }
 
 
+def build_headers() -> dict:
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,de;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Cache-Control": "max-age=0",
+    }
+
+
 def fetch_maps_page() -> str:
-    url = f"https://www.google.com/maps/place/?q=place_id:{PLACE_ID}&hl=en"
-    resp = requests.get(url, headers=HEADERS, timeout=20)
-    resp.raise_for_status()
-    return resp.text
+    """Fetch the public Maps page with retries and backoff."""
+    last_exc = None
+    for attempt in range(1, RETRIES + 1):
+        lang = random.choice(LANGUAGES)
+        url = f"https://www.google.com/maps/place/?q=place_id:{PLACE_ID}&hl={lang}"
+        try:
+            print(f"  Fetch attempt {attempt}/{RETRIES} (lang={lang}) ...")
+            resp = requests.get(url, headers=build_headers(), timeout=TIMEOUT)
+            resp.raise_for_status()
+            if len(resp.text) < 1000:
+                raise requests.RequestException("Response too short, likely blocked")
+            return resp.text
+        except Exception as exc:
+            last_exc = exc
+            print(f"    Attempt {attempt} failed: {exc}")
+            if attempt < RETRIES:
+                sleep = (2 ** attempt) + random.uniform(0, 2)
+                print(f"    Retrying in {sleep:.1f}s ...")
+                time.sleep(sleep)
+    raise last_exc or requests.RequestException("All fetch attempts failed")
 
 
 def extract_rating(html: str) -> float | None:
-    # Google embeds rating like: "4.5 stars" or in JSON blobs
+    """Extract aggregate place rating."""
+    # "4.5 stars" in page title
     m = re.search(r'"(\d\.\d)\s*stars?"', html)
     if m:
         return float(m.group(1))
-    # fallback: look for aria-label="Rated X.X out of 5"
-    m = re.search(r'aria-label="Rated (\d+\.?\d*) out of 5"', html)
+    m = re.search(r'(\d\.\d)\s*stars?', html, re.IGNORECASE)
+    if m:
+        return float(m.group(1))
+    # aria-label variant
+    m = re.search(r'aria-label="Rated\s+(\d+\.?\d*)\s+out of 5"', html)
     if m:
         return float(m.group(1))
     return None
 
 
 def extract_review_count(html: str) -> int | None:
-    # e.g. "47 reviews" or "(47)"
-    m = re.search(r'(\d+)\s+reviews?', html, re.IGNORECASE)
-    if m:
-        return int(m.group(1))
+    """Extract total review count."""
+    patterns = [
+        r'"(\d[\d\.]*)\s*reviews?"',
+        r'(\d[\d\.]*)\s+reviews?',
+        r'\\"(\d[\d\.]*)\\"[,\s]*\\"reviews?\\"',
+    ]
+    for pat in patterns:
+        m = re.search(pat, html, re.IGNORECASE)
+        if m:
+            return int(m.group(1).replace('.', '').replace(',', ''))
     return None
 
 
 def extract_reviews(html: str) -> list[dict]:
     """
     Extract individual reviews from the Maps page JS payload.
-    Google stores review data in a large JS array — we pull out
-    the key fields with regex patterns that have been stable.
+    Uses multiple heuristics because Google obfuscates their markup.
     """
     reviews = []
+    seen_texts = set()
 
-    # Reviews appear in JS as arrays; a reliable anchor is the reviewer name
-    # followed by their rating and text in the serialised data.
-    # Pattern targets the review block structure Google uses.
+    # Try to find author/rating/text triples in the initial page script
     blocks = re.findall(
         r'"((?:[^"\\]|\\.)*)"\s*,\s*null\s*,\s*null\s*,\s*\[\s*(\d)\s*\]'
         r'.*?"((?:[^"\\]|\\.){20,500}?)"',
@@ -91,8 +159,7 @@ def extract_reviews(html: str) -> list[dict]:
         re.DOTALL,
     )
 
-    seen_texts = set()
-    for block in blocks[:MAX_REVIEWS * 3]:  # allow some extras to filter dupes
+    for block in blocks[:MAX_REVIEWS * 4]:
         try:
             author = block[0].encode().decode("unicode_escape")
             rating = int(block[1])
@@ -167,7 +234,7 @@ def build_fallback_reviews() -> list[dict]:
 
 def main():
     existing = load_existing()
-    output   = dict(existing)  # start from existing data
+    output = dict(existing)
 
     try:
         print("Fetching Google Maps page …")
@@ -182,7 +249,7 @@ def main():
 
         if rating:
             output["rating"] = rating
-        if count:
+        if count is not None:
             output["reviewCount"] = count
         if revs:
             output["reviews"] = revs
@@ -197,14 +264,17 @@ def main():
     except Exception as exc:
         print(f"  Scrape failed: {exc}", file=sys.stderr)
         print("  Keeping existing data unchanged.")
-        # Still write updatedAt so we know the job ran
         output["updatedAt"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         output["source"]    = "fallback"
         if not output.get("reviews"):
             output["reviews"] = build_fallback_reviews()
 
+    # Validate before writing
+    dumped = json.dumps(output, ensure_ascii=False, indent=2)
+    json.loads(dumped)  # strict round-trip validation
+
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+    OUTPUT.write_text(dumped, encoding="utf-8")
     print(f"Wrote {OUTPUT}")
 
 

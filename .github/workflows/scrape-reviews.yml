@@ -27,6 +27,9 @@ jobs:
       - name: Scrape reviews
         run: python scripts/scrape_reviews.py
 
+      - name: Validate reviews.json
+        run: python -c "import json; json.load(open('data/reviews.json'))"
+
       - name: Commit updated reviews.json
         run: |
           git config user.name  "github-actions[bot]"
